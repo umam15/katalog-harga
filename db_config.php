@@ -3,7 +3,7 @@
 // dengan fallback ke nilai default agar tetap kompatibel dengan setup yang sudah ada.
 $host     = getenv('DB_HOST') ?: 'xvm12.sumberbarokah.com';
 $port     = getenv('DB_PORT') ?: '5444';
-$dbname   = getenv('DB_NAME') ?: 'i5_2026';
+$dbname   = getenv('DB_NAME') ?: 'i5_SBM';
 $user     = getenv('DB_USER') ?: 'sysi5adm';
 $password = getenv('DB_PASS') ?: 'u&aV23cc.o82dtr1x89c';
 
