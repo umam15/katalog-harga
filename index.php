@@ -114,10 +114,10 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
 <body>
 <header class="topbar">
     <div class="topbar-inner">
-        <div class="brand">
+        <a href="index.php" class="brand">
             <span class="brand-mark">SB</span>
             <span class="brand-name">Katalog Harga</span>
-        </div>
+        </a>
         <form method="GET" action="index.php" class="search-form" id="searchForm">
             <input type="text" name="q" id="searchInput" class="search-box"
                    placeholder="Cari atau scan kode item…"
@@ -141,7 +141,7 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
                 <?php endif; ?>
                 <a href="admin/logout.php" class="auth-link">Keluar</a>
             <?php else: ?>
-                <a href="admin/login.php" class="auth-link auth-link-login">Login</a>
+                <a href="admin/login.php" class="auth-link">Login</a>
             <?php endif; ?>
         </div>
     </div>

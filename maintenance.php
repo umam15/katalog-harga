@@ -16,6 +16,7 @@
             <span class="empty-icon">🛠️</span>
             <h2 class="section-title" style="margin-top:12px;">Sistem sedang maintenance</h2>
             <p>Mohon maaf, database Katalog Harga saat ini tidak dapat diakses.<br>Silakan coba beberapa saat lagi.</p>
+            <a href="admin/index.php" class="empty-clear">Masuk ke halaman admin</a>
         </div>
     </main>
 </body>

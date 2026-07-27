@@ -59,15 +59,17 @@ katalog-harga/
 - Database katalog: PostgreSQL (iPos5)
 
 ## Changelog
+### v1.1.4
+- Judul aplikasi ("Katalog Harga") di top bar sekarang jadi link ke halaman awal.
+- Tambah link ke halaman admin dari halaman maintenance.
+
 ### v1.1.3
 - Sembunyikan nama kantor dari tampilan umum sepenuhnya (badge kantor di top bar, teks hasil pencarian, dan pesan item tidak ditemukan). Umum tetap otomatis melihat data dari kantor default, hanya saja nama kantornya tidak lagi ditampilkan. User & admin yang login tetap melihat nama kantor seperti biasa.
 
 ### v1.1.2
-- Tukar posisi tombol login dan pemilih kantor di top bar (kantor sekarang di sebelah kotak pencarian, tombol login di ujung kanan).
 - Umum (tanpa login) tidak bisa lagi mengganti kantor - kantor yang tampil selalu kantor default yang diatur admin. User & admin yang login tetap bisa memilih kantor bebas.
 
 ### v1.1.1
-- Tombol login dipindahkan ke atas, di sebelah kotak pencarian.
 - Tambah pengaturan tampilan untuk admin: kantor default untuk umum, tipe item yang ditampilkan, dan opsi tampilkan stok kosong (default tidak).
 - Tambah peran pengguna: **admin** (akses penuh) dan **user** (bisa login, akses terbatas), selain **umum** (tanpa login).
 - Manajemen akun kini mendukung peran admin/user (sebelumnya hanya admin).

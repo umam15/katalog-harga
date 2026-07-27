@@ -70,7 +70,7 @@ a { text-decoration: none; color: inherit; }
     flex-wrap: wrap;
 }
 
-.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; text-decoration: none; }
 .brand-mark {
     font-family: var(--font-mono);
     font-weight: 600;
@@ -78,7 +78,7 @@ a { text-decoration: none; color: inherit; }
     color: var(--ink);
     padding: 4px 8px;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 13px;
     letter-spacing: 0.5px;
 }
 .brand-name {
@@ -135,12 +135,7 @@ a { text-decoration: none; color: inherit; }
     padding: 8px 4px;
     white-space: nowrap;
 }
-.auth-link-login {
-    padding: 8px 14px;
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--ink);
-}
+
 
 /* ---------- Selector kantor/gudang ---------- */
 .kantor-form { flex-shrink: 0; }
