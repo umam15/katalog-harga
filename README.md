@@ -60,7 +60,7 @@ katalog-harga/
 
 ## Changelog
 ### v1.1.4
-- Judul aplikasi ("Katalog Harga") di top bar sekarang jadi link ke halaman awal.
+- Judul aplikasi ("Katalog Harga" / "Admin · Katalog Harga") di top bar sekarang jadi link ke halaman index utama (katalog publik), baik di halaman umum maupun di panel admin.
 - Tambah link ke halaman admin dari halaman maintenance.
 
 ### v1.1.3

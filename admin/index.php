@@ -23,10 +23,10 @@ $adminTotal = admin_count();
 <body>
 <header class="topbar">
     <div class="topbar-inner">
-        <div class="brand">
+        <a href="../index.php" class="brand">
             <span class="brand-mark">SB</span>
             <span class="brand-name">Admin · Katalog Harga</span>
-        </div>
+        </a>
         <div class="admin-topbar-right">
             <span class="admin-whoami">Halo, <?= htmlspecialchars($_SESSION['username']) ?></span>
             <a href="logout.php" class="btn-back" style="color:#fff;">Keluar</a>
