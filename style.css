@@ -115,6 +115,26 @@ a { text-decoration: none; color: inherit; }
     font-weight: 600;
 }
 
+/* ---------- Selector kantor/gudang ---------- */
+.kantor-form { flex-shrink: 0; }
+.kantor-select {
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.kantor-select:focus { outline: none; background: #fff; color: var(--ink); }
+.kantor-select option { color: var(--ink); }
+
+/* ---------- Link admin ---------- */
+.admin-link { text-align: center; margin-top: 24px; }
+.admin-link a { color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--border); }
+
 /* ---------- Result meta ---------- */
 .result-meta {
     color: var(--muted);

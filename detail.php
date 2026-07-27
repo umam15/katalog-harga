@@ -1,5 +1,7 @@
 <?php
-require_once 'db_config.php';
+require_once 'config.php';
+
+$kantor = current_kantor($pdo);
 
 $id = $_GET['id'] ?? '';
 if ($id === '') { header('Location: index.php'); exit; }
@@ -7,9 +9,9 @@ if ($id === '') { header('Location: index.php'); exit; }
 $sqlItem = "SELECT i.kodeitem, i.namaitem, i.satuan AS satuandasar, i.jenis, i.merek, i.keterangan, i.sistemhargajual, i.hargajual1, s.stok
             FROM tbl_item i
             JOIN tbl_itemstok s ON i.kodeitem = s.kodeitem
-            WHERE i.kodeitem = ? AND s.kantor = 'UTM'";
+            WHERE i.kodeitem = ? AND s.kantor = ?";
 $stmt = $pdo->prepare($sqlItem);
-$stmt->execute([$id]);
+$stmt->execute([$id, $kantor]);
 $item = $stmt->fetch();
 
 if (!$item) {
@@ -27,7 +29,7 @@ if (!$item) {
         <main class="container">
             <div class="empty-state" style="margin-top:40px;">
                 <span class="empty-icon">📦</span>
-                <p>Item tidak ditemukan atau stok kosong di kantor UTM.</p>
+                <p>Item tidak ditemukan atau stok kosong di kantor <?= htmlspecialchars($kantor) ?>.</p>
                 <a href="index.php" class="empty-clear">&lsaquo; Kembali ke katalog</a>
             </div>
         </main>

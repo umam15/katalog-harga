@@ -1,5 +1,23 @@
 <?php
-require_once 'db_config.php';
+require_once 'config.php';
+
+// Ganti kantor/gudang aktif kalau user memilih dari dropdown, lalu redirect
+// supaya URL tetap bersih (tanpa param kantor) dan search/page tidak hilang.
+if (isset($_GET['kantor'])) {
+    $requested = trim($_GET['kantor']);
+    $validKantor = get_kantor_list($pdo);
+    if (in_array($requested, $validKantor, true)) {
+        set_current_kantor($requested);
+    }
+    $redirectParams = $_GET;
+    unset($redirectParams['kantor']);
+    $qs = http_build_query($redirectParams);
+    header('Location: index.php' . ($qs !== '' ? '?' . $qs : ''));
+    exit;
+}
+
+$kantor     = current_kantor($pdo);
+$kantorList = get_kantor_list($pdo);
 
 $search = trim($_GET['q'] ?? '');
 $page   = max(1, (int)($_GET['p'] ?? 1));
@@ -37,9 +55,9 @@ $sql = "SELECT i.kodeitem, i.namaitem, i.merek, i.satuan AS satuandasar,
               CASE WHEN UPPER(i.sistemhargajual) = 'L' THEN h.level END ASC NULLS LAST
             LIMIT 1
         ) hj ON TRUE
-        WHERE s.kantor = 'UTM' AND s.stok > 0";
+        WHERE s.kantor = ? AND s.stok > 0";
 
-$params = [];
+$params = [$kantor];
 if ($search !== '') {
     $sql .= " AND (i.namaitem ILIKE ? OR i.merek ILIKE ? OR i.keterangan ILIKE ? OR i.jenis ILIKE ? OR i.kodeitem ILIKE ?
                OR EXISTS (
@@ -47,7 +65,7 @@ if ($search !== '') {
                     WHERE b.kodeitem = i.kodeitem AND b.kodebarcode ILIKE ?
                ))";
     $like = "%$search%";
-    $params = [$like, $like, $like, $like, $like, $like];
+    array_push($params, $like, $like, $like, $like, $like, $like);
 }
 
 $sql .= " ORDER BY i.kodeitem ASC LIMIT $limit OFFSET $offset";
@@ -82,13 +100,23 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
                    placeholder="Cari atau scan kode item…"
                    value="<?= htmlspecialchars($search) ?>" autofocus autocomplete="off">
         </form>
+        <?php if (!empty($kantorList)): ?>
+        <form method="GET" action="index.php" class="kantor-form" id="kantorForm">
+            <?php if ($search !== ''): ?><input type="hidden" name="q" value="<?= htmlspecialchars($search) ?>"><?php endif; ?>
+            <select name="kantor" id="kantorSelect" class="kantor-select" onchange="this.form.submit()">
+                <?php foreach ($kantorList as $k): ?>
+                <option value="<?= htmlspecialchars($k) ?>" <?= $k === $kantor ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </form>
+        <?php endif; ?>
     </div>
 </header>
 
 <main class="container">
     <?php if ($search !== ''): ?>
         <p class="result-meta">
-            <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>”
+            <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>” di kantor <?= htmlspecialchars($kantor) ?>
         </p>
     <?php endif; ?>
 
@@ -135,6 +163,8 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
            href="?q=<?= urlencode($search) ?>&p=<?= min($totalPages, $page + 1) ?>" aria-disabled="<?= $page >= $totalPages ? 'true' : 'false' ?>">&rsaquo;</a>
     </nav>
     <?php endif; ?>
+
+    <p class="admin-link"><a href="admin/login.php">Admin</a></p>
 </main>
 
 <script>
