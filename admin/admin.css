@@ -56,6 +56,27 @@
 .form-input:focus { outline: none; border-color: var(--accent); }
 .form-input-sm { padding: 7px 10px; font-size: 13px; }
 
+.checkbox-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 400;
+    font-family: var(--font-body);
+    color: var(--ink);
+    cursor: pointer;
+}
+.checkbox-item input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
 .btn-row { display: flex; gap: 10px; }
 .inline-form { display: flex; gap: 8px; align-items: center; }
 

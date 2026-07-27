@@ -1,9 +1,13 @@
 <?php
 require_once 'config.php';
 
+$loggedIn = is_logged_in();
+
 // Ganti kantor/gudang aktif kalau user memilih dari dropdown, lalu redirect
 // supaya URL tetap bersih (tanpa param kantor) dan search/page tidak hilang.
-if (isset($_GET['kantor'])) {
+// Hanya untuk user yang login - umum tidak boleh mengganti kantor, jadi
+// parameter ?kantor= diabaikan begitu saja kalau belum login.
+if ($loggedIn && isset($_GET['kantor'])) {
     $requested = trim($_GET['kantor']);
     $validKantor = get_kantor_list($pdo);
     if (in_array($requested, $validKantor, true)) {
@@ -16,8 +20,16 @@ if (isset($_GET['kantor'])) {
     exit;
 }
 
-$kantor     = current_kantor($pdo);
 $kantorList = get_kantor_list($pdo);
+// Umum selalu memakai kantor default yang diatur admin (tidak bisa ganti).
+// User & admin yang login boleh pilih kantor sendiri lewat dropdown, tersimpan di session.
+$kantor = $loggedIn ? current_kantor($pdo) : get_setting('default_kantor', 'UTM');
+
+// Pengaturan tampilan (tipe item, stok kosong) hanya berlaku untuk pengunjung
+// umum (tanpa login). User & admin yang login selalu melihat katalog lengkap
+// tanpa batasan ini.
+$displayJenis   = $loggedIn ? [] : get_display_jenis();
+$showStokKosong = $loggedIn ? true : get_show_stok_kosong();
 
 $search = trim($_GET['q'] ?? '');
 $page   = max(1, (int)($_GET['p'] ?? 1));
@@ -35,7 +47,7 @@ $offset = ($page - 1) * $limit;
 //   diambil tingkatan terendah (level 1 untuk 'L', jmlsampai terkecil untuk 'J')
 // LATERAL join dipakai supaya per-item cukup ambil 1 baris harga yang relevan,
 // tanpa N+1 query dan tanpa mengganggu COUNT(*) OVER() untuk pagination.
-$sql = "SELECT i.kodeitem, i.namaitem, i.merek, i.satuan AS satuandasar,
+$sql = "SELECT i.kodeitem, i.namaitem, i.merek, i.satuan AS satuandasar, s.stok,
                CASE WHEN UPPER(i.sistemhargajual) = 'O' THEN i.hargajual1 ELSE hj.hargajual END AS harga_raw,
                COUNT(*) OVER() AS total_rows
         FROM tbl_item i
@@ -55,9 +67,20 @@ $sql = "SELECT i.kodeitem, i.namaitem, i.merek, i.satuan AS satuandasar,
               CASE WHEN UPPER(i.sistemhargajual) = 'L' THEN h.level END ASC NULLS LAST
             LIMIT 1
         ) hj ON TRUE
-        WHERE s.kantor = ? AND s.stok > 0";
+        WHERE s.kantor = ?";
 
 $params = [$kantor];
+
+if (!$showStokKosong) {
+    $sql .= " AND s.stok > 0";
+}
+
+if (!empty($displayJenis)) {
+    $placeholders = implode(',', array_fill(0, count($displayJenis), '?'));
+    $sql .= " AND i.jenis IN ($placeholders)";
+    array_push($params, ...$displayJenis);
+}
+
 if ($search !== '') {
     $sql .= " AND (i.namaitem ILIKE ? OR i.merek ILIKE ? OR i.keterangan ILIKE ? OR i.jenis ILIKE ? OR i.kodeitem ILIKE ?
                OR EXISTS (
@@ -100,7 +123,7 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
                    placeholder="Cari atau scan kode item…"
                    value="<?= htmlspecialchars($search) ?>" autofocus autocomplete="off">
         </form>
-        <?php if (!empty($kantorList)): ?>
+        <?php if ($loggedIn && !empty($kantorList)): ?>
         <form method="GET" action="index.php" class="kantor-form" id="kantorForm">
             <?php if ($search !== ''): ?><input type="hidden" name="q" value="<?= htmlspecialchars($search) ?>"><?php endif; ?>
             <select name="kantor" id="kantorSelect" class="kantor-select" onchange="this.form.submit()">
@@ -110,13 +133,28 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
             </select>
         </form>
         <?php endif; ?>
+        <div class="auth-block">
+            <?php if ($loggedIn): ?>
+                <span class="auth-whoami">Halo, <?= htmlspecialchars($_SESSION['username']) ?></span>
+                <?php if (current_user_role() === 'admin'): ?>
+                    <a href="admin/index.php" class="auth-link">Admin</a>
+                <?php endif; ?>
+                <a href="admin/logout.php" class="auth-link">Keluar</a>
+            <?php else: ?>
+                <a href="admin/login.php" class="auth-link auth-link-login">Login</a>
+            <?php endif; ?>
+        </div>
     </div>
 </header>
 
 <main class="container">
     <?php if ($search !== ''): ?>
         <p class="result-meta">
-            <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>” di kantor <?= htmlspecialchars($kantor) ?>
+            <?php if ($loggedIn): ?>
+                <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>” di kantor <?= htmlspecialchars($kantor) ?>
+            <?php else: ?>
+                <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>”
+            <?php endif; ?>
         </p>
     <?php endif; ?>
 
@@ -140,11 +178,13 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
             <?php foreach ($items as $row):
                 // Bulatkan ke ATAS ke kelipatan 500 terdekat.
                 $harga = ceil(((float)$row['harga_raw']) / 500) * 500;
+                $kosong = (float)$row['stok'] <= 0;
             ?>
             <a class="catalog-row" href="detail.php?id=<?= urlencode($row['kodeitem']) ?>">
                 <span class="col-item">
                     <img class="thumb" src="image.php?id=<?= urlencode($row['kodeitem']) ?>" alt="" loading="lazy" width="40" height="40">
                     <span class="item-name"><?= htmlspecialchars($row['namaitem']) ?></span>
+                    <?php if ($kosong): ?><span class="badge badge-out badge-inline">Stok kosong</span><?php endif; ?>
                 </span>
                 <span class="col-merek" data-label="Merek"><?= htmlspecialchars($row['merek']) ?></span>
                 <span class="col-satuan" data-label="Satuan"><?= htmlspecialchars($row['satuandasar']) ?></span>
@@ -163,8 +203,6 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
            href="?q=<?= urlencode($search) ?>&p=<?= min($totalPages, $page + 1) ?>" aria-disabled="<?= $page >= $totalPages ? 'true' : 'false' ?>">&rsaquo;</a>
     </nav>
     <?php endif; ?>
-
-    <p class="admin-link"><a href="admin/login.php">Admin</a></p>
 </main>
 
 <script>

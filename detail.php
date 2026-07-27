@@ -1,7 +1,9 @@
 <?php
 require_once 'config.php';
 
-$kantor = current_kantor($pdo);
+// Sama seperti index.php: umum selalu memakai kantor default (tidak bisa ganti),
+// user & admin yang login pakai kantor pilihan mereka di session.
+$kantor = is_logged_in() ? current_kantor($pdo) : get_setting('default_kantor', 'UTM');
 
 $id = $_GET['id'] ?? '';
 if ($id === '') { header('Location: index.php'); exit; }
@@ -29,7 +31,7 @@ if (!$item) {
         <main class="container">
             <div class="empty-state" style="margin-top:40px;">
                 <span class="empty-icon">📦</span>
-                <p>Item tidak ditemukan atau stok kosong di kantor <?= htmlspecialchars($kantor) ?>.</p>
+                <p>Item tidak ditemukan atau stok kosong<?= is_logged_in() ? ' di kantor ' . htmlspecialchars($kantor) : '' ?>.</p>
                 <a href="index.php" class="empty-clear">&lsaquo; Kembali ke katalog</a>
             </div>
         </main>

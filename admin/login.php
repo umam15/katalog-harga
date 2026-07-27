@@ -3,8 +3,8 @@ define('ROOT_PATH', dirname(__DIR__));
 require_once ROOT_PATH . '/includes/functions.php';
 ensure_session();
 
-if (is_admin_logged_in()) {
-    header('Location: index.php');
+if (is_logged_in()) {
+    header('Location: ' . (current_user_role() === 'admin' ? 'index.php' : '../index.php'));
     exit;
 }
 
@@ -27,25 +27,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($password !== $confirm) {
             $error = 'Konfirmasi password tidak cocok.';
         } else {
-            create_admin($username, $password);
-            $admin = find_admin_by_username($username);
-            $_SESSION['admin_id']       = $admin['id'];
-            $_SESSION['admin_username'] = $admin['username'];
+            create_admin($username, $password, 'admin');
+            $account = find_admin_by_username($username);
+            $_SESSION['user_id']  = $account['id'];
+            $_SESSION['username'] = $account['username'];
+            $_SESSION['role']     = $account['role'];
             session_regenerate_id(true);
             header('Location: index.php');
             exit;
         }
     } else {
-        // Login biasa
+        // Login biasa (admin maupun user)
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
-        $admin = find_admin_by_username($username);
+        $account = find_admin_by_username($username);
 
-        if ($admin && password_verify($password, $admin['password_hash'])) {
-            $_SESSION['admin_id']       = $admin['id'];
-            $_SESSION['admin_username'] = $admin['username'];
+        if ($account && password_verify($password, $account['password_hash'])) {
+            $_SESSION['user_id']  = $account['id'];
+            $_SESSION['username'] = $account['username'];
+            $_SESSION['role']     = $account['role'];
             session_regenerate_id(true);
-            header('Location: index.php');
+            header('Location: ' . ($account['role'] === 'admin' ? 'index.php' : '../index.php'));
             exit;
         }
         $error = 'Username atau password salah.';
@@ -59,7 +61,7 @@ $csrf = csrf_token();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $isSetup ? 'Buat Akun Admin' : 'Login Admin' ?> · Katalog Harga</title>
+    <title><?= $isSetup ? 'Buat Akun Admin' : 'Login' ?> · Katalog Harga</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -76,10 +78,12 @@ $csrf = csrf_token();
 <main class="container container-narrow">
     <div class="auth-card">
         <h1 class="section-title" style="margin-top:0;">
-            <?= $isSetup ? 'Buat Akun Admin Pertama' : 'Login Admin' ?>
+            <?= $isSetup ? 'Buat Akun Admin Pertama' : 'Login' ?>
         </h1>
         <?php if ($isSetup): ?>
             <p class="muted-text">Belum ada akun admin. Buat akun pertama untuk mengelola pengaturan.</p>
+        <?php else: ?>
+            <p class="muted-text">Login sebagai admin atau user untuk akses katalog yang lebih lengkap.</p>
         <?php endif; ?>
 
         <?php if ($error): ?>

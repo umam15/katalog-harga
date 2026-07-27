@@ -78,7 +78,7 @@ a { text-decoration: none; color: inherit; }
     color: var(--ink);
     padding: 4px 8px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 14px;
     letter-spacing: 0.5px;
 }
 .brand-name {
@@ -115,6 +115,33 @@ a { text-decoration: none; color: inherit; }
     font-weight: 600;
 }
 
+/* ---------- Login / akun (top bar) ---------- */
+.auth-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.auth-whoami {
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    white-space: nowrap;
+}
+.auth-link {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13px;
+    color: #fff;
+    padding: 8px 4px;
+    white-space: nowrap;
+}
+.auth-link-login {
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--ink);
+}
+
 /* ---------- Selector kantor/gudang ---------- */
 .kantor-form { flex-shrink: 0; }
 .kantor-select {
@@ -130,10 +157,6 @@ a { text-decoration: none; color: inherit; }
 }
 .kantor-select:focus { outline: none; background: #fff; color: var(--ink); }
 .kantor-select option { color: var(--ink); }
-
-/* ---------- Link admin ---------- */
-.admin-link { text-align: center; margin-top: 24px; }
-.admin-link a { color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--border); }
 
 /* ---------- Result meta ---------- */
 .result-meta {
@@ -194,6 +217,11 @@ a.catalog-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.badge-inline {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 2px 8px;
 }
 .col-merek, .col-satuan { color: var(--muted); font-size: 13.5px; }
 

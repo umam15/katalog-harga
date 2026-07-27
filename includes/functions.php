@@ -31,23 +31,39 @@ function get_settings_pdo(): PDO {
         key   TEXT PRIMARY KEY,
         value TEXT NOT NULL
     )');
+    // role: 'admin' (akses penuh, termasuk panel admin) atau 'user' (login,
+    // tapi akses terbatas - cuma katalog tanpa filter tampilan umum).
     $pdo->exec('CREATE TABLE IF NOT EXISTS admin_users (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         username      TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
+        role          TEXT NOT NULL DEFAULT \'admin\',
         created_at    TEXT NOT NULL
     )');
+
+    // Migrasi untuk instalasi lama (v1.1.0 ke bawah) yang tabelnya belum
+    // punya kolom role.
+    $hasRoleColumn = false;
+    foreach ($pdo->query('PRAGMA table_info(admin_users)')->fetchAll() as $col) {
+        if ($col['name'] === 'role') { $hasRoleColumn = true; break; }
+    }
+    if (!$hasRoleColumn) {
+        $pdo->exec("ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'admin'");
+    }
 
     if ($isNew) {
         // Nilai default = kredensial yang sebelumnya hardcoded di db_config.php.
         // Admin bisa mengubahnya lewat admin/database.php kapan saja.
         $defaults = [
-            'db_host'        => 'xvm12.sumberbarokah.com',
-            'db_port'        => '5444',
-            'db_name'        => 'i5_2026',
-            'db_user'        => 'sysi5adm',
-            'db_pass'        => 'u&aV23cc.o82dtr1x89c',
-            'default_kantor' => 'UTM',
+            'db_host'          => 'xvm12.sumberbarokah.com',
+            'db_port'          => '5444',
+            'db_name'          => 'i5_2026',
+            'db_user'          => 'sysi5adm',
+            'db_pass'          => 'u&aV23cc.o82dtr1x89c',
+            'default_kantor'   => 'UTM',
+            // Pengaturan tampilan untuk pengunjung umum (tanpa login).
+            'display_jenis'    => '',  // kosong = tampilkan semua tipe item
+            'show_stok_kosong' => '0', // default: item stok kosong disembunyikan
         ];
         $ins = $pdo->prepare('INSERT INTO app_settings (key, value) VALUES (?, ?)');
         foreach ($defaults as $k => $v) {
@@ -109,6 +125,39 @@ function get_kantor_list(PDO $pdo): array {
     }
 }
 
+/** Ambil daftar tipe/jenis item unik dari tbl_item (untuk filter tampilan umum). */
+function get_jenis_list(PDO $pdo): array {
+    try {
+        $stmt = $pdo->query(
+            "SELECT DISTINCT jenis FROM tbl_item
+             WHERE jenis IS NOT NULL AND jenis <> ''
+             ORDER BY jenis"
+        );
+        return array_column($stmt->fetchAll(), 'jenis');
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Tipe item yang boleh tampil untuk pengunjung umum (hasil pengaturan admin).
+ * Array kosong berarti tidak ada pembatasan (semua tipe ditampilkan).
+ */
+function get_display_jenis(): array {
+    $raw = get_setting('display_jenis', '') ?? '';
+    if (trim($raw) === '') return [];
+    return array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
+}
+
+function set_display_jenis(array $jenisList): void {
+    set_setting('display_jenis', implode(',', $jenisList));
+}
+
+/** Apakah item dengan stok kosong ditampilkan untuk pengunjung umum. Default: tidak. */
+function get_show_stok_kosong(): bool {
+    return get_setting('show_stok_kosong', '0') === '1';
+}
+
 /** Kantor/gudang yang sedang aktif untuk user (disimpan di session). */
 function current_kantor(PDO $pdo): string {
     ensure_session();
@@ -131,12 +180,20 @@ function ensure_session(): void {
     }
 }
 
-/* ------------------------- Autentikasi admin ------------------------- */
+/* --------------------- Autentikasi (admin & user) --------------------- */
+// Dua peran bisa login lewat form yang sama (admin/login.php):
+//   - admin : akses penuh, termasuk panel admin/pengaturan
+//   - user  : bisa login, tapi akses terbatas (katalog tanpa filter tampilan umum)
+// Pengunjung tanpa login ("umum") tidak punya baris di admin_users sama sekali.
 
+/** Jumlah akun dengan role admin (dipakai untuk cek setup awal & proteksi hapus admin terakhir). */
 function admin_count(): int {
-    return (int) get_settings_pdo()->query('SELECT COUNT(*) AS c FROM admin_users')->fetch()['c'];
+    $stmt = get_settings_pdo()->prepare("SELECT COUNT(*) AS c FROM admin_users WHERE role = 'admin'");
+    $stmt->execute();
+    return (int) $stmt->fetch()['c'];
 }
 
+/** Cari akun (admin atau user) berdasarkan username, dipakai saat login. */
 function find_admin_by_username(string $username): ?array {
     $stmt = get_settings_pdo()->prepare('SELECT * FROM admin_users WHERE username = ?');
     $stmt->execute([$username]);
@@ -144,19 +201,33 @@ function find_admin_by_username(string $username): ?array {
     return $row ?: null;
 }
 
-function create_admin(string $username, string $password): void {
+/** Buat akun baru. $role harus 'admin' atau 'user'. */
+function create_admin(string $username, string $password, string $role = 'admin'): void {
+    if (!in_array($role, ['admin', 'user'], true)) $role = 'user';
     $stmt = get_settings_pdo()->prepare(
-        'INSERT INTO admin_users (username, password_hash, created_at) VALUES (?, ?, ?)'
+        'INSERT INTO admin_users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)'
     );
-    $stmt->execute([$username, password_hash($password, PASSWORD_DEFAULT), date('c')]);
+    $stmt->execute([$username, password_hash($password, PASSWORD_DEFAULT), $role, date('c')]);
 }
 
-function is_admin_logged_in(): bool {
+/** Apakah ada sesi login yang aktif (peran apa pun). */
+function is_logged_in(): bool {
     ensure_session();
-    return !empty($_SESSION['admin_id']);
+    return !empty($_SESSION['user_id']);
 }
 
-/** Panggil di awal setiap halaman admin (kecuali login.php) untuk memaksa login. */
+/** Peran user yang sedang login, atau null kalau belum login (umum). */
+function current_user_role(): ?string {
+    ensure_session();
+    return $_SESSION['role'] ?? null;
+}
+
+/** Khusus akses penuh (panel admin). */
+function is_admin_logged_in(): bool {
+    return is_logged_in() && current_user_role() === 'admin';
+}
+
+/** Panggil di awal setiap halaman admin (kecuali login.php) untuk memaksa login sebagai admin. */
 function require_admin(): void {
     if (!is_admin_logged_in()) {
         header('Location: login.php');

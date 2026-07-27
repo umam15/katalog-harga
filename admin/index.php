@@ -28,7 +28,7 @@ $adminTotal = admin_count();
             <span class="brand-name">Admin · Katalog Harga</span>
         </div>
         <div class="admin-topbar-right">
-            <span class="admin-whoami">Halo, <?= htmlspecialchars($_SESSION['admin_username']) ?></span>
+            <span class="admin-whoami">Halo, <?= htmlspecialchars($_SESSION['username']) ?></span>
             <a href="logout.php" class="btn-back" style="color:#fff;">Keluar</a>
         </div>
     </div>
@@ -46,8 +46,13 @@ $adminTotal = admin_count();
         </a>
         <a href="users.php" class="admin-card">
             <span class="admin-card-icon">👤</span>
-            <span class="admin-card-title">Manajemen Admin</span>
+            <span class="admin-card-title">Manajemen Pengguna</span>
             <span class="admin-card-desc"><?= $adminTotal ?> akun admin terdaftar</span>
+        </a>
+        <a href="display.php" class="admin-card">
+            <span class="admin-card-icon">🖥️</span>
+            <span class="admin-card-title">Pengaturan Tampilan</span>
+            <span class="admin-card-desc">Kantor, tipe item &amp; stok kosong untuk umum</span>
         </a>
         <a href="../index.php" class="admin-card">
             <span class="admin-card-icon">🛒</span>

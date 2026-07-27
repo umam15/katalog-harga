@@ -8,7 +8,7 @@ $message = '';
 $messageType = 'success';
 
 function all_admins(PDO $pdo): array {
-    return $pdo->query('SELECT id, username, created_at FROM admin_users ORDER BY id')->fetchAll();
+    return $pdo->query('SELECT id, username, role, created_at FROM admin_users ORDER BY id')->fetchAll();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'add') {
             $username = trim($_POST['username'] ?? '');
             $password = $_POST['password'] ?? '';
+            $role     = ($_POST['role'] ?? 'user') === 'admin' ? 'admin' : 'user';
             if ($username === '' || strlen($password) < 8) {
                 $message = 'Username wajib diisi dan password minimal 8 karakter.';
                 $messageType = 'danger';
@@ -28,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'Username sudah dipakai.';
                 $messageType = 'danger';
             } else {
-                create_admin($username, $password);
-                $message = 'Admin baru berhasil ditambahkan.';
+                create_admin($username, $password, $role);
+                $message = 'Akun baru berhasil ditambahkan.';
             }
         } elseif ($action === 'password') {
             $targetId = (int)($_POST['id'] ?? 0);
@@ -44,16 +45,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($action === 'delete') {
             $targetId = (int)($_POST['id'] ?? 0);
-            if ($targetId === (int)$_SESSION['admin_id']) {
+            $targetStmt = $sqlitePdo->prepare('SELECT role FROM admin_users WHERE id = ?');
+            $targetStmt->execute([$targetId]);
+            $targetRole = $targetStmt->fetchColumn();
+
+            if ($targetId === (int)$_SESSION['user_id']) {
                 $message = 'Tidak bisa menghapus akun yang sedang digunakan.';
                 $messageType = 'danger';
-            } elseif (admin_count() <= 1) {
+            } elseif ($targetRole === 'admin' && admin_count() <= 1) {
                 $message = 'Tidak bisa menghapus admin terakhir.';
                 $messageType = 'danger';
             } else {
                 $stmt = $sqlitePdo->prepare('DELETE FROM admin_users WHERE id = ?');
                 $stmt->execute([$targetId]);
-                $message = 'Admin berhasil dihapus.';
+                $message = 'Akun berhasil dihapus.';
             }
         }
     }
@@ -67,7 +72,7 @@ $csrf = csrf_token();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Admin · Admin</title>
+    <title>Manajemen Pengguna · Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -83,7 +88,8 @@ $csrf = csrf_token();
 </header>
 
 <main class="container container-narrow">
-    <h1 class="section-title" style="margin-top:0;">Manajemen Admin</h1>
+    <h1 class="section-title" style="margin-top:0;">Manajemen Pengguna</h1>
+    <p class="muted-text">Admin punya akses penuh termasuk panel ini. User bisa login tapi akses katalognya terbatas (tanpa filter tampilan umum, tapi tidak bisa masuk panel admin).</p>
 
     <?php if ($message): ?>
         <div class="alert alert-<?= $messageType ?>"><?= htmlspecialchars($message) ?></div>
@@ -92,12 +98,13 @@ $csrf = csrf_token();
     <div class="admin-table-wrap">
         <table class="admin-table">
             <thead>
-                <tr><th>Username</th><th>Dibuat</th><th>Ganti Password</th><th></th></tr>
+                <tr><th>Username</th><th>Peran</th><th>Dibuat</th><th>Ganti Password</th><th></th></tr>
             </thead>
             <tbody>
                 <?php foreach ($admins as $a): ?>
                 <tr>
-                    <td><?= htmlspecialchars($a['username']) ?><?= (int)$a['id'] === (int)$_SESSION['admin_id'] ? ' <span class="muted-text">(Anda)</span>' : '' ?></td>
+                    <td><?= htmlspecialchars($a['username']) ?><?= (int)$a['id'] === (int)$_SESSION['user_id'] ? ' <span class="muted-text">(Anda)</span>' : '' ?></td>
+                    <td><?= $a['role'] === 'admin' ? 'Admin' : 'User' ?></td>
                     <td class="mono-text"><?= htmlspecialchars(date('d-m-Y', strtotime($a['created_at']))) ?></td>
                     <td>
                         <form method="POST" class="inline-form">
@@ -109,8 +116,8 @@ $csrf = csrf_token();
                         </form>
                     </td>
                     <td>
-                        <?php if (count($admins) > 1 && (int)$a['id'] !== (int)$_SESSION['admin_id']): ?>
-                        <form method="POST" class="inline-form" onsubmit="return confirm('Hapus admin ini?');">
+                        <?php if ((int)$a['id'] !== (int)$_SESSION['user_id'] && !($a['role'] === 'admin' && admin_count() <= 1)): ?>
+                        <form method="POST" class="inline-form" onsubmit="return confirm('Hapus akun ini?');">
                             <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf) ?>">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
@@ -124,7 +131,7 @@ $csrf = csrf_token();
         </table>
     </div>
 
-    <h2 class="section-title">Tambah Admin Baru</h2>
+    <h2 class="section-title">Tambah Akun Baru</h2>
     <form method="POST" class="stack-form">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf) ?>">
         <input type="hidden" name="action" value="add">
@@ -134,7 +141,13 @@ $csrf = csrf_token();
         <label class="form-label">Password
             <input type="password" name="password" class="form-input" required minlength="8">
         </label>
-        <button type="submit" class="btn btn-primary">Tambah Admin</button>
+        <label class="form-label">Peran
+            <select name="role" class="form-input">
+                <option value="user">User (akses terbatas)</option>
+                <option value="admin">Admin (akses penuh)</option>
+            </select>
+        </label>
+        <button type="submit" class="btn btn-primary">Tambah Akun</button>
     </form>
 </main>
 </body>
