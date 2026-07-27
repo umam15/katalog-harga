@@ -55,7 +55,7 @@ function get_settings_pdo(): PDO {
         // Nilai default = kredensial yang sebelumnya hardcoded di db_config.php.
         // Admin bisa mengubahnya lewat admin/database.php kapan saja.
         $defaults = [
-            'db_host'          => 'xvm12.sumberbarokah.com',
+            'db_host'          => 'ipos5.sumberbarokah.com',
             'db_port'          => '5444',
             'db_name'          => 'i5_2026',
             'db_user'          => 'sysi5adm',
