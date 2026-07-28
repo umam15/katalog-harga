@@ -1,5 +1,5 @@
 # Katalog Harga iPos5
-Katalog Harga versi web, untuk program iPos5.
+Katalog Harga versi web, untuk aplikasi POS iPos5
 
 ## Fitur
 - Cari & scan item (nama, merek, kode, jenis, barcode) dengan hasil otomatis (debounced), lengkap dengan gambar produk dan harga.
