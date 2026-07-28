@@ -1,66 +1,50 @@
 # Katalog Harga iPos5
-Katalog Harga versi web, untuk aplikasi POS iPos5
+Katalog Harga versi web, untuk aplikasi POS iPos5.
 
 ## Fitur
-- Cari & scan item (nama, merek, kode, jenis, barcode) dengan hasil otomatis (debounced), lengkap dengan gambar produk dan harga.
+- Cari & scan item (nama, merek, kode, jenis, barcode) dengan hasil otomatis, lengkap gambar & harga.
 - Pilih kantor/gudang aktif, harga & stok menyesuaikan otomatis.
-- Halaman detail per item: daftar harga per satuan, barcode, dan info stok.
-- Panel admin untuk mengatur koneksi database, akun pengguna, dan tampilan katalog publik.
+- Halaman detail per item: harga per satuan, barcode, dan stok.
+- Panel admin: koneksi database, akun pengguna, dan pengaturan tampilan katalog umum (kantor default, tipe item, stok kosong, pembulatan harga).
 
 ## Peran pengguna
 | Peran | Login? | Akses |
 |---|---|---|
-| **Admin** | Ya | Akses penuh: katalog lengkap + panel admin (pengaturan database, manajemen pengguna, pengaturan tampilan). |
-| **User** | Ya | Akses terbatas: katalog lengkap (tanpa filter tampilan umum), tapi tidak bisa masuk panel admin. |
-| **Umum** | Tidak | Pengunjung tanpa login. Katalog yang dilihat mengikuti pengaturan tampilan yang diatur admin (kantor default, tipe item, dan status stok kosong) dan tidak bisa mengganti kantor. |
+| **Admin** | Ya | Akses penuh: katalog lengkap + panel admin. |
+| **User** | Ya | Katalog lengkap (tanpa filter tampilan umum), tanpa akses panel admin. |
+| **Umum** | Tidak | Katalog mengikuti pengaturan tampilan dari admin, tidak bisa ganti kantor. |
 
-Tombol **Login** ada di pojok kanan atas, di sebelah kotak pencarian. Akun pertama yang dibuat (lewat halaman login saat belum ada admin) otomatis menjadi admin.
-
-## Pengaturan tampilan (khusus untuk umum)
-Diatur admin lewat **Panel Admin -> Pengaturan Tampilan**:
-- **Kantor default untuk umum** - kantor/gudang yang ditampilkan ke pengunjung tanpa login saat pertama kali membuka katalog.
-- **Tipe item yang ditampilkan** - batasi tipe/jenis item yang muncul di katalog umum. Kosongkan semua untuk menampilkan seluruh tipe.
-- **Tampilkan item stok kosong** - default **tidak** (item dengan stok 0 disembunyikan dari pengunjung umum).
-
-Admin dan user yang login selalu melihat katalog lengkap tanpa batasan-batasan di atas.
+Tombol **Login** ada di pojok kanan atas. Akun pertama yang dibuat otomatis jadi admin.
 
 ## Struktur file
 ```
 katalog-harga/
-├── index.php            Katalog publik (pencarian, daftar item)
-├── detail.php           Detail item (harga per satuan, barcode, stok)
-├── image.php            Gambar produk (dari database)
+├── index.php / detail.php / image.php   Katalog publik
 ├── config.php           Bootstrap halaman publik
-├── maintenance.php      Halaman fallback saat koneksi database gagal
-├── includes/
-│   └── functions.php    Helper: pengaturan, autentikasi, koneksi DB, dsb.
-├── admin/
-│   ├── login.php         Login (admin & user) / setup akun admin pertama
-│   ├── logout.php
-│   ├── index.php         Dashboard admin
-│   ├── database.php      Pengaturan koneksi PostgreSQL
-│   ├── users.php         Manajemen akun (admin & user)
-│   └── display.php       Pengaturan tampilan katalog umum
-└── data/
-    └── settings.sqlite   Pengaturan aplikasi & akun (dibuat otomatis)
+├── maintenance.php      Fallback saat koneksi database gagal
+├── includes/functions.php   Helper: pengaturan, autentikasi, koneksi DB
+├── admin/                Login, dashboard, pengaturan database/tampilan, manajemen user
+└── data/settings.sqlite  Pengaturan aplikasi & akun (dibuat otomatis)
 ```
 
 ## Instalasi & setup awal
-1. Deploy semua file ke server PHP yang mendukung `pdo_pgsql` dan `pdo_sqlite`.
-2. Pastikan folder `data/` bisa ditulis oleh web server (untuk `settings.sqlite`).
+1. Deploy ke server PHP yang mendukung `pdo_pgsql` dan `pdo_sqlite`.
+2. Pastikan folder `data/` bisa ditulis web server.
 3. Buka `admin/login.php`, buat akun admin pertama.
 4. Atur koneksi database di **Panel Admin -> Pengaturan Database**.
-5. (Opsional) Atur tampilan katalog umum di **Panel Admin -> Pengaturan Tampilan**, dan tambah akun `user` di **Manajemen Pengguna** bila diperlukan.
+5. (Opsional) Atur tampilan katalog umum & tambah akun `user` bila diperlukan.
 
 ## Kebutuhan sistem
 - PHP dengan ekstensi `pdo_pgsql`, `pdo_sqlite`, dan `zlib`
 - Database katalog: PostgreSQL (iPos5)
 
 ## Changelog
+### v1.1.6
+- Perbaiki `admin/display.php`: koneksi database yang belum di-setting atau gagal terhubung dulu menyebabkan fatal error, sekarang tampil pesan error yang mengarahkan ke Pengaturan Database.
+
 ### v1.1.5
-- Tambah pengaturan nilai pembulatan harga (ceil) di katalog, bisa diatur admin lewat spin button di **Panel Admin -> Pengaturan Tampilan** (default 0 = tanpa pembulatan).
-- Tambah opsi apakah pembulatan harga yang sama juga diterapkan di halaman detail item (checkbox, default tidak - detail menampilkan harga asli).
+- Tambah pengaturan pembulatan harga (ceil) di katalog, opsional diterapkan juga di halaman detail.
 
 ### v1.1.1
-- Tambah pengaturan tampilan untuk admin: kantor default untuk umum, tipe item yang ditampilkan, dan opsi tampilkan stok kosong (default tidak).
-- Tambah peran pengguna: **admin** (akses penuh) dan **user** (bisa login, akses terbatas), selain **umum** (tanpa login).
+- Tambah pengaturan tampilan untuk admin (kantor default, tipe item, stok kosong).
+- Tambah peran pengguna **admin** dan **user**, selain **umum** (tanpa login).

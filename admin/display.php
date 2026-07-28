@@ -3,13 +3,21 @@ define('ROOT_PATH', dirname(__DIR__));
 require_once ROOT_PATH . '/includes/functions.php';
 require_admin();
 
-$pdo = get_pgsql_pdo();
-
 $message = '';
 $messageType = 'success';
+$dbError = null;
 
-$kantorList = get_kantor_list($pdo);
-$jenisList  = get_jenis_list($pdo);
+try {
+    $pdo = get_pgsql_pdo();
+    $kantorList = get_kantor_list($pdo);
+    $jenisList  = get_jenis_list($pdo);
+} catch (PDOException $e) {
+    // Database belum di-setting atau tidak bisa diakses - jangan fatal error,
+    // tampilkan pesan dan arahkan ke halaman Pengaturan Database.
+    $dbError = $e->getMessage();
+    $kantorList = [];
+    $jenisList  = [];
+}
 
 $current = [
     'default_kantor'         => get_setting('default_kantor', ''),
@@ -83,6 +91,13 @@ $csrf = csrf_token();
 <main class="container container-narrow">
     <h1 class="section-title" style="margin-top:0;">Pengaturan Tampilan</h1>
     <p class="muted-text">Mengatur apa yang dilihat pengunjung <strong>umum</strong> (tanpa login) di katalog. User dan admin yang login selalu melihat katalog lengkap tanpa batasan ini.</p>
+
+    <?php if ($dbError !== null): ?>
+        <div class="alert alert-danger">
+            Database tidak terhubung, daftar kantor &amp; tipe item tidak bisa dimuat (isi manual di bawah kalau perlu). Pengaturan lain di halaman ini tetap bisa disimpan.
+            Cek <a href="database.php">Pengaturan Database</a> untuk mengisi atau memperbaiki kredensial koneksi.
+        </div>
+    <?php endif; ?>
 
     <?php if ($message): ?>
         <div class="alert alert-<?= $messageType ?>"><?= htmlspecialchars($message) ?></div>
