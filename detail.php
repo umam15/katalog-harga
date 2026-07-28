@@ -8,12 +8,29 @@ $kantor = is_logged_in() ? current_kantor($pdo) : get_setting('default_kantor', 
 $id = $_GET['id'] ?? '';
 if ($id === '') { header('Location: index.php'); exit; }
 
-$sqlItem = "SELECT i.kodeitem, i.namaitem, i.satuan AS satuandasar, i.jenis, i.merek, i.keterangan, i.sistemhargajual, i.hargajual1, s.stok
-            FROM tbl_item i
-            JOIN tbl_itemstok s ON i.kodeitem = s.kodeitem
-            WHERE i.kodeitem = ? AND s.kantor = ?";
-$stmt = $pdo->prepare($sqlItem);
-$stmt->execute([$id, $kantor]);
+$semuaGudang = is_kantor_semua($kantor);
+
+if ($semuaGudang) {
+    // Gabungkan (SUM) stok item ini lintas semua kantor.
+    $sqlItem = "SELECT i.kodeitem, i.namaitem, i.satuan AS satuandasar, i.jenis, i.merek, i.keterangan, i.sistemhargajual, i.hargajual1, s.stok
+                FROM tbl_item i
+                JOIN (
+                    SELECT kodeitem, SUM(stok) AS stok
+                    FROM tbl_itemstok
+                    WHERE kodeitem = ?
+                    GROUP BY kodeitem
+                ) s ON i.kodeitem = s.kodeitem
+                WHERE i.kodeitem = ?";
+    $stmt = $pdo->prepare($sqlItem);
+    $stmt->execute([$id, $id]);
+} else {
+    $sqlItem = "SELECT i.kodeitem, i.namaitem, i.satuan AS satuandasar, i.jenis, i.merek, i.keterangan, i.sistemhargajual, i.hargajual1, s.stok
+                FROM tbl_item i
+                JOIN tbl_itemstok s ON i.kodeitem = s.kodeitem
+                WHERE i.kodeitem = ? AND s.kantor = ?";
+    $stmt = $pdo->prepare($sqlItem);
+    $stmt->execute([$id, $kantor]);
+}
 $item = $stmt->fetch();
 
 if (!$item) {
@@ -31,7 +48,7 @@ if (!$item) {
         <main class="container">
             <div class="empty-state" style="margin-top:40px;">
                 <span class="empty-icon">📦</span>
-                <p>Item tidak ditemukan atau stok kosong<?= is_logged_in() ? ' di kantor ' . htmlspecialchars($kantor) : '' ?>.</p>
+                <p>Item tidak ditemukan atau stok kosong<?= is_logged_in() ? ' di kantor ' . htmlspecialchars(kantor_label($kantor)) : '' ?>.</p>
                 <a href="index.php" class="empty-clear">&lsaquo; Kembali ke katalog</a>
             </div>
         </main>
@@ -132,7 +149,7 @@ if (get_bulatkan_harga_detail()) {
                 <?php if ($item['merek']): ?><span class="badge"><?= htmlspecialchars($item['merek']) ?></span><?php endif; ?>
                 <?php if ($item['jenis']): ?><span class="badge"><?= htmlspecialchars($item['jenis']) ?></span><?php endif; ?>
                 <span class="badge <?= $stokKosong ? 'badge-out' : 'badge-stock' ?>">
-                    Stok: <?= number_format((float)$item['stok'], 2, ',', '.') ?> <?= htmlspecialchars($item['satuandasar']) ?>
+                    Stok: <?= number_format((float)$item['stok'], 2, ',', '.') ?> <?= htmlspecialchars($item['satuandasar']) ?><?= $semuaGudang ? ' (semua gudang)' : '' ?>
                 </span>
             </div>
 

@@ -9,6 +9,10 @@ if (!defined('ROOT_PATH')) {
 }
 define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.sqlite');
 
+// Nilai khusus untuk "kantor" yang berarti gabungan SEMUA gudang (bukan nama
+// kantor asli), dipakai di pengaturan default umum dan filter kantor user login.
+define('KANTOR_SEMUA', '__SEMUA__');
+
 /**
  * Buka (atau buat) settings.sqlite lewat PDO SQLite.
  * Skema dibuat otomatis kalau belum ada, dan nilai default database
@@ -63,7 +67,7 @@ function get_settings_pdo(): PDO {
             'show_stok_kosong' => '0', // default: item stok kosong disembunyikan
             // Pembulatan harga (ceil ke kelipatan sekian) di katalog, dan
             // apakah pembulatan yang sama juga diterapkan di halaman detail.
-            'harga_pembulatan'      => '500',
+            'harga_pembulatan'      => '50',
             'bulatkan_harga_detail' => '0', // default: detail menampilkan harga asli (tidak dibulatkan)
         ];
         $ins = $pdo->prepare('INSERT INTO app_settings (key, value) VALUES (?, ?)');
@@ -165,7 +169,7 @@ function get_show_stok_kosong(): bool {
  * Minimal 1 (0 atau negatif dianggap tidak valid, fallback ke 1 = tanpa pembulatan berarti).
  */
 function get_harga_pembulatan(): int {
-    $val = (int) get_setting('harga_pembulatan', '500');
+    $val = (int) get_setting('harga_pembulatan', '50');
     return $val > 0 ? $val : 1;
 }
 
@@ -178,6 +182,16 @@ function get_bulatkan_harga_detail(): bool {
 function bulatkan_harga(float $harga, int $pembulatan): float {
     if ($pembulatan <= 0) $pembulatan = 1;
     return ceil($harga / $pembulatan) * $pembulatan;
+}
+
+/** Apakah nilai kantor yang dipakai berarti "semua gudang" (gabungan semua kantor). */
+function is_kantor_semua(?string $kantor): bool {
+    return $kantor === KANTOR_SEMUA;
+}
+
+/** Label tampilan untuk nilai kantor, menangani kasus khusus "semua gudang". */
+function kantor_label(?string $kantor): string {
+    return is_kantor_semua($kantor) ? 'Semua Gudang' : (string) $kantor;
 }
 
 /** Kantor/gudang yang sedang aktif untuk user (disimpan di session). */

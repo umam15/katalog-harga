@@ -58,8 +58,9 @@ katalog-harga/
 
 ## Changelog
 ### v1.1.5
-- Tambah pengaturan nilai pembulatan harga (ceil) di katalog, bisa diatur admin lewat spin button di **Panel Admin -> Pengaturan Tampilan** (default 500).
+- Tambah pengaturan nilai pembulatan harga (ceil) di katalog, bisa diatur admin lewat spin button di **Panel Admin -> Pengaturan Tampilan** (default 50).
 - Tambah opsi apakah pembulatan harga yang sama juga diterapkan di halaman detail item (checkbox, default tidak - detail menampilkan harga asli).
+- Tambah pilihan **Semua Gudang** (gabungan stok semua kantor) di kantor default untuk pengunjung umum, dan di filter kantor untuk user/admin yang login.
 
 ### v1.1.1
 - Tambah pengaturan tampilan untuk admin: kantor default untuk umum, tipe item yang ditampilkan, dan opsi tampilkan stok kosong (default tidak).
