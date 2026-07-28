@@ -133,7 +133,7 @@ $csrf = csrf_token();
 
         <label class="checkbox-item">
             <input type="checkbox" name="bulatkan_harga_detail" <?= $current['bulatkan_harga_detail'] ? 'checked' : '' ?>>
-            Bulatkan harga juga di halaman detail
+            Bulatkan juga harga di halaman detail
         </label>
 
         <div class="btn-row">
