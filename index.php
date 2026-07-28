@@ -10,7 +10,7 @@ $loggedIn = is_logged_in();
 if ($loggedIn && isset($_GET['kantor'])) {
     $requested = trim($_GET['kantor']);
     $validKantor = get_kantor_list($pdo);
-    if (in_array($requested, $validKantor, true) || is_kantor_semua($requested)) {
+    if (in_array($requested, $validKantor, true)) {
         set_current_kantor($requested);
     }
     $redirectParams = $_GET;
@@ -47,23 +47,11 @@ $offset = ($page - 1) * $limit;
 //   diambil tingkatan terendah (level 1 untuk 'L', jmlsampai terkecil untuk 'J')
 // LATERAL join dipakai supaya per-item cukup ambil 1 baris harga yang relevan,
 // tanpa N+1 query dan tanpa mengganggu COUNT(*) OVER() untuk pagination.
-$semuaGudang = is_kantor_semua($kantor);
-
-// Untuk "semua gudang", stok tiap item digabung (SUM) lintas kantor lewat
-// subquery, supaya tetap 1 baris per item (bukan 1 baris per item per kantor).
-$stokJoin = $semuaGudang
-    ? "JOIN (
-            SELECT kodeitem, SUM(stok) AS stok
-            FROM tbl_itemstok
-            GROUP BY kodeitem
-        ) s ON i.kodeitem = s.kodeitem"
-    : "JOIN tbl_itemstok s ON i.kodeitem = s.kodeitem";
-
 $sql = "SELECT i.kodeitem, i.namaitem, i.merek, i.satuan AS satuandasar, s.stok,
                CASE WHEN UPPER(i.sistemhargajual) = 'O' THEN i.hargajual1 ELSE hj.hargajual END AS harga_raw,
                COUNT(*) OVER() AS total_rows
         FROM tbl_item i
-        $stokJoin
+        JOIN tbl_itemstok s ON i.kodeitem = s.kodeitem
         LEFT JOIN LATERAL (
             SELECT h.hargajual
             FROM tbl_itemhj h
@@ -79,14 +67,9 @@ $sql = "SELECT i.kodeitem, i.namaitem, i.merek, i.satuan AS satuandasar, s.stok,
               CASE WHEN UPPER(i.sistemhargajual) = 'L' THEN h.level END ASC NULLS LAST
             LIMIT 1
         ) hj ON TRUE
-        WHERE 1=1";
+        WHERE s.kantor = ?";
 
-$params = [];
-
-if (!$semuaGudang) {
-    $sql .= " AND s.kantor = ?";
-    $params[] = $kantor;
-}
+$params = [$kantor];
 
 if (!$showStokKosong) {
     $sql .= " AND s.stok > 0";
@@ -146,7 +129,6 @@ $hargaPembulatan = get_harga_pembulatan();
         <form method="GET" action="index.php" class="kantor-form" id="kantorForm">
             <?php if ($search !== ''): ?><input type="hidden" name="q" value="<?= htmlspecialchars($search) ?>"><?php endif; ?>
             <select name="kantor" id="kantorSelect" class="kantor-select" onchange="this.form.submit()">
-                <option value="<?= KANTOR_SEMUA ?>" <?= $semuaGudang ? 'selected' : '' ?>>Semua Gudang</option>
                 <?php foreach ($kantorList as $k): ?>
                 <option value="<?= htmlspecialchars($k) ?>" <?= $k === $kantor ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
                 <?php endforeach; ?>
@@ -171,7 +153,7 @@ $hargaPembulatan = get_harga_pembulatan();
     <?php if ($search !== ''): ?>
         <p class="result-meta">
             <?php if ($loggedIn): ?>
-                <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>” di kantor <?= htmlspecialchars(kantor_label($kantor)) ?>
+                <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>” di kantor <?= htmlspecialchars($kantor) ?>
             <?php else: ?>
                 <?= $totalRows ?> item ditemukan untuk “<?= htmlspecialchars($search) ?>”
             <?php endif; ?>
@@ -196,7 +178,7 @@ $hargaPembulatan = get_harga_pembulatan();
             </div>
         <?php else: ?>
             <?php foreach ($items as $row):
-                // Bulatkan ke ATAS ke kelipatan sesuai pengaturan admin.
+                // Bulatkan ke ATAS ke kelipatan sesuai pengaturan admin (default 0 = tanpa pembulatan).
                 $harga = bulatkan_harga((float)$row['harga_raw'], $hargaPembulatan);
                 $kosong = (float)$row['stok'] <= 0;
             ?>

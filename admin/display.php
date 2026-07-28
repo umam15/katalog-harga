@@ -27,20 +27,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $defaultKantor         = trim($_POST['default_kantor'] ?? '');
         $selectedJenis         = $_POST['display_jenis'] ?? [];
         $showStokKosong        = isset($_POST['show_stok_kosong']);
-        $hargaPembulatan       = (int) ($_POST['harga_pembulatan'] ?? 50);
+        $hargaPembulatan       = (int) ($_POST['harga_pembulatan'] ?? 0);
         $bulatkanHargaDetail   = isset($_POST['bulatkan_harga_detail']);
 
         if (!is_array($selectedJenis)) $selectedJenis = [];
         $selectedJenis = array_values(array_intersect($jenisList, $selectedJenis));
 
-        $kantorValid = is_kantor_semua($defaultKantor)
-            || $defaultKantor !== '' && (empty($kantorList) || in_array($defaultKantor, $kantorList, true));
-
-        if (!$kantorValid) {
+        if ($defaultKantor === '' || (!empty($kantorList) && !in_array($defaultKantor, $kantorList, true))) {
             $message = 'Kantor default tidak valid.';
             $messageType = 'danger';
-        } elseif ($hargaPembulatan < 1) {
-            $message = 'Nilai pembulatan harga harus lebih besar dari 0.';
+        } elseif ($hargaPembulatan < 0) {
+            $message = 'Nilai pembulatan harga tidak boleh negatif.';
             $messageType = 'danger';
         } else {
             set_setting('default_kantor', $defaultKantor);
@@ -97,14 +94,13 @@ $csrf = csrf_token();
         <label class="form-label">Kantor default untuk umum
             <?php if (!empty($kantorList)): ?>
             <select name="default_kantor" class="form-input">
-                <option value="<?= KANTOR_SEMUA ?>" <?= is_kantor_semua($current['default_kantor']) ? 'selected' : '' ?>>Semua Gudang (gabungan stok semua kantor)</option>
                 <?php foreach ($kantorList as $k): ?>
                 <option value="<?= htmlspecialchars($k) ?>" <?= $k === $current['default_kantor'] ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php else: ?>
                 <input type="text" name="default_kantor" class="form-input" value="<?= htmlspecialchars($current['default_kantor']) ?>">
-                <span class="muted-text">Tidak bisa membaca daftar kantor dari database, isi manual (atau isi <code><?= KANTOR_SEMUA ?></code> untuk semua gudang).</span>
+                <span class="muted-text">Tidak bisa membaca daftar kantor dari database, isi manual.</span>
             <?php endif; ?>
         </label>
 
@@ -130,8 +126,8 @@ $csrf = csrf_token();
         </label>
 
         <label class="form-label">Pembulatan harga (Rp)
-            <span class="muted-text" style="font-weight:400;">Harga di katalog dibulatkan ke ATAS ke kelipatan angka ini, mis. 50.</span>
-            <input type="number" name="harga_pembulatan" class="form-input" min="1" step="1" required
+            <span class="muted-text" style="font-weight:400;">Harga di katalog dibulatkan ke ATAS ke kelipatan angka ini, mis. 500. Isi 0 untuk menonaktifkan pembulatan (harga ditampilkan apa adanya).</span>
+            <input type="number" name="harga_pembulatan" class="form-input" min="0" step="1" required
                    value="<?= htmlspecialchars((string) $current['harga_pembulatan']) ?>">
         </label>
 
