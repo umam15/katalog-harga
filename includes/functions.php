@@ -61,6 +61,10 @@ function get_settings_pdo(): PDO {
             // Pengaturan tampilan untuk pengunjung umum (tanpa login).
             'display_jenis'    => '',  // kosong = tampilkan semua tipe item
             'show_stok_kosong' => '0', // default: item stok kosong disembunyikan
+            // Pembulatan harga (ceil ke kelipatan sekian) di katalog, dan
+            // apakah pembulatan yang sama juga diterapkan di halaman detail.
+            'harga_pembulatan'      => '0',
+            'bulatkan_harga_detail' => '0', // default: detail menampilkan harga asli (tidak dibulatkan)
         ];
         $ins = $pdo->prepare('INSERT INTO app_settings (key, value) VALUES (?, ?)');
         foreach ($defaults as $k => $v) {
@@ -153,6 +157,28 @@ function set_display_jenis(array $jenisList): void {
 /** Apakah item dengan stok kosong ditampilkan untuk pengunjung umum. Default: tidak. */
 function get_show_stok_kosong(): bool {
     return get_setting('show_stok_kosong', '0') === '1';
+}
+
+/**
+ * Nilai kelipatan pembulatan harga (ke atas/ceil) yang dipakai di katalog,
+ * mis. 500 -> harga dibulatkan ke atas ke kelipatan 500 terdekat.
+ * Default: 0 (tanpa pembulatan, harga ditampilkan apa adanya). Nilai negatif
+ * dianggap tidak valid dan di-fallback ke 0.
+ */
+function get_harga_pembulatan(): int {
+    $val = (int) get_setting('harga_pembulatan', '0');
+    return $val > 0 ? $val : 0;
+}
+
+/** Apakah pembulatan harga yang sama juga diterapkan di halaman detail item. Default: tidak. */
+function get_bulatkan_harga_detail(): bool {
+    return get_setting('bulatkan_harga_detail', '0') === '1';
+}
+
+/** Bulatkan harga ke atas (ceil) ke kelipatan $pembulatan terdekat. $pembulatan <= 0 berarti tanpa pembulatan (harga dikembalikan apa adanya). */
+function bulatkan_harga(float $harga, int $pembulatan): float {
+    if ($pembulatan <= 0) return $harga;
+    return ceil($harga / $pembulatan) * $pembulatan;
 }
 
 /** Kantor/gudang yang sedang aktif untuk user (disimpan di session). */

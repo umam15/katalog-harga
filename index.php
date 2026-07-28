@@ -98,6 +98,8 @@ $items = $stmt->fetchAll();
 
 $totalRows  = $items[0]['total_rows'] ?? 0;
 $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
+
+$hargaPembulatan = get_harga_pembulatan();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -176,8 +178,8 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
             </div>
         <?php else: ?>
             <?php foreach ($items as $row):
-                // Bulatkan ke ATAS ke kelipatan 500 terdekat.
-                $harga = ceil(((float)$row['harga_raw']) / 500) * 500;
+                // Bulatkan ke ATAS ke kelipatan sesuai pengaturan admin (default 0 = tanpa pembulatan).
+                $harga = bulatkan_harga((float)$row['harga_raw'], $hargaPembulatan);
                 $kosong = (float)$row['stok'] <= 0;
             ?>
             <a class="catalog-row" href="detail.php?id=<?= urlencode($row['kodeitem']) ?>">

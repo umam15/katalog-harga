@@ -89,6 +89,16 @@ if ($sistem === 'O') {
 }
 
 $stokKosong = (float)$item['stok'] <= 0;
+
+// Pembulatan harga hanya diterapkan di sini kalau admin mengaktifkan opsi
+// "bulatkan juga di detail" - defaultnya detail menampilkan harga asli.
+if (get_bulatkan_harga_detail()) {
+    $pembulatan = get_harga_pembulatan();
+    foreach ($hargaList as &$hl) {
+        $hl['harga'] = bulatkan_harga((float)$hl['harga'], $pembulatan);
+    }
+    unset($hl);
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">

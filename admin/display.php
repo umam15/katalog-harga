@@ -12,9 +12,11 @@ $kantorList = get_kantor_list($pdo);
 $jenisList  = get_jenis_list($pdo);
 
 $current = [
-    'default_kantor'   => get_setting('default_kantor', ''),
-    'display_jenis'    => get_display_jenis(),
-    'show_stok_kosong' => get_show_stok_kosong(),
+    'default_kantor'         => get_setting('default_kantor', ''),
+    'display_jenis'          => get_display_jenis(),
+    'show_stok_kosong'       => get_show_stok_kosong(),
+    'harga_pembulatan'       => get_harga_pembulatan(),
+    'bulatkan_harga_detail'  => get_bulatkan_harga_detail(),
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -22,9 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Sesi tidak valid, silakan coba lagi.';
         $messageType = 'danger';
     } else {
-        $defaultKantor  = trim($_POST['default_kantor'] ?? '');
-        $selectedJenis  = $_POST['display_jenis'] ?? [];
-        $showStokKosong = isset($_POST['show_stok_kosong']);
+        $defaultKantor         = trim($_POST['default_kantor'] ?? '');
+        $selectedJenis         = $_POST['display_jenis'] ?? [];
+        $showStokKosong        = isset($_POST['show_stok_kosong']);
+        $hargaPembulatan       = (int) ($_POST['harga_pembulatan'] ?? 0);
+        $bulatkanHargaDetail   = isset($_POST['bulatkan_harga_detail']);
 
         if (!is_array($selectedJenis)) $selectedJenis = [];
         $selectedJenis = array_values(array_intersect($jenisList, $selectedJenis));
@@ -32,15 +36,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($defaultKantor === '' || (!empty($kantorList) && !in_array($defaultKantor, $kantorList, true))) {
             $message = 'Kantor default tidak valid.';
             $messageType = 'danger';
+        } elseif ($hargaPembulatan < 0) {
+            $message = 'Nilai pembulatan harga tidak boleh negatif.';
+            $messageType = 'danger';
         } else {
             set_setting('default_kantor', $defaultKantor);
             set_display_jenis($selectedJenis);
             set_setting('show_stok_kosong', $showStokKosong ? '1' : '0');
+            set_setting('harga_pembulatan', (string) $hargaPembulatan);
+            set_setting('bulatkan_harga_detail', $bulatkanHargaDetail ? '1' : '0');
 
             $current = [
-                'default_kantor'   => $defaultKantor,
-                'display_jenis'    => $selectedJenis,
-                'show_stok_kosong' => $showStokKosong,
+                'default_kantor'        => $defaultKantor,
+                'display_jenis'         => $selectedJenis,
+                'show_stok_kosong'      => $showStokKosong,
+                'harga_pembulatan'      => $hargaPembulatan,
+                'bulatkan_harga_detail' => $bulatkanHargaDetail,
             ];
             $message = 'Pengaturan tampilan berhasil disimpan.';
         }
@@ -112,6 +123,17 @@ $csrf = csrf_token();
         <label class="checkbox-item">
             <input type="checkbox" name="show_stok_kosong" <?= $current['show_stok_kosong'] ? 'checked' : '' ?>>
             Tampilkan item dengan stok kosong
+        </label>
+
+        <label class="form-label">Pembulatan harga (Rp)
+            <span class="muted-text" style="font-weight:400;">Harga di katalog dibulatkan ke ATAS ke kelipatan angka ini, mis. 500. Isi 0 untuk menonaktifkan pembulatan (harga ditampilkan apa adanya).</span>
+            <input type="number" name="harga_pembulatan" class="form-input" min="0" step="1" required
+                   value="<?= htmlspecialchars((string) $current['harga_pembulatan']) ?>">
+        </label>
+
+        <label class="checkbox-item">
+            <input type="checkbox" name="bulatkan_harga_detail" <?= $current['bulatkan_harga_detail'] ? 'checked' : '' ?>>
+            Bulatkan juga harga di halaman detail
         </label>
 
         <div class="btn-row">

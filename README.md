@@ -53,10 +53,14 @@ katalog-harga/
 5. (Opsional) Atur tampilan katalog umum di **Panel Admin -> Pengaturan Tampilan**, dan tambah akun `user` di **Manajemen Pengguna** bila diperlukan.
 
 ## Kebutuhan sistem
-- PHP dengan ekstensi `pdo_pgsql` dan `pdo_sqlite`
+- PHP dengan ekstensi `pdo_pgsql`, `pdo_sqlite`, dan `zlib`
 - Database katalog: PostgreSQL (iPos5)
 
 ## Changelog
+### v1.1.5
+- Tambah pengaturan nilai pembulatan harga (ceil) di katalog, bisa diatur admin lewat spin button di **Panel Admin -> Pengaturan Tampilan** (default 0 = tanpa pembulatan).
+- Tambah opsi apakah pembulatan harga yang sama juga diterapkan di halaman detail item (checkbox, default tidak - detail menampilkan harga asli).
+
 ### v1.1.1
 - Tambah pengaturan tampilan untuk admin: kantor default untuk umum, tipe item yang ditampilkan, dan opsi tampilkan stok kosong (default tidak).
 - Tambah peran pengguna: **admin** (akses penuh) dan **user** (bisa login, akses terbatas), selain **umum** (tanpa login).
