@@ -52,14 +52,11 @@ function get_settings_pdo(): PDO {
     }
 
     if ($isNew) {
-        // Nilai default = kredensial yang sebelumnya hardcoded di db_config.php.
-        // Admin bisa mengubahnya lewat admin/database.php kapan saja.
+        // Nilai default untuk pengaturan tampilan saja. Kredensial database
+        // TIDAK diisi otomatis lagi (dulu berasal dari db_config.php lama) -
+        // admin mengisinya sendiri lewat admin/database.php setelah login,
+        // supaya kredensial produksi tidak pernah ikut tersimpan di source code.
         $defaults = [
-            'db_host'          => 'ipos5.sumberbarokah.com',
-            'db_port'          => '5444',
-            'db_name'          => 'i5_2026',
-            'db_user'          => 'sysi5adm',
-            'db_pass'          => 'u&aV23cc.o82dtr1x89c',
             'default_kantor'   => 'UTM',
             // Pengaturan tampilan untuk pengunjung umum (tanpa login).
             'display_jenis'    => '',  // kosong = tampilkan semua tipe item
