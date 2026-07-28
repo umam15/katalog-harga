@@ -1,0 +1,144 @@
+/* ==========================================================================
+   Admin panel — dibangun di atas token dari style.css, hanya menambah
+   pola: form vertikal, tabel, kartu dashboard, alert.
+   ========================================================================== */
+
+.container-narrow { max-width: 560px; }
+
+.admin-topbar-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+.admin-whoami { color: rgba(255,255,255,0.85); font-size: 13.5px; }
+
+.muted-text { color: var(--muted); font-size: 13.5px; }
+.mono-text { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+
+/* ---------- Alerts ---------- */
+.alert {
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    margin-bottom: 18px;
+    border: 1px solid transparent;
+}
+.alert-success { background: var(--stock-tint); color: var(--stock); border-color: var(--stock); }
+.alert-danger  { background: var(--danger-tint); color: var(--danger); border-color: var(--danger); }
+
+/* ---------- Auth card ---------- */
+.auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 28px;
+    margin-top: 24px;
+}
+
+/* ---------- Forms ---------- */
+.stack-form { display: flex; flex-direction: column; gap: 16px; }
+.form-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    font-family: var(--font-display);
+}
+.form-input {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+}
+.form-input:focus { outline: none; border-color: var(--accent); }
+.form-input-sm { padding: 7px 10px; font-size: 13px; }
+
+.checkbox-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 400;
+    font-family: var(--font-body);
+    color: var(--ink);
+    cursor: pointer;
+}
+.checkbox-item input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+.btn-row { display: flex; gap: 10px; }
+.inline-form { display: flex; gap: 8px; align-items: center; }
+
+.btn {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+.btn-primary   { background: var(--primary); color: #fff; }
+.btn-secondary { background: var(--surface); color: var(--primary); border-color: var(--primary); }
+.btn-danger    { background: var(--danger-tint); color: var(--danger); border-color: var(--danger); }
+.btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+/* ---------- Dashboard cards ---------- */
+.admin-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+}
+.admin-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+.admin-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.admin-card-icon { font-size: 24px; }
+.admin-card-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.admin-card-desc { color: var(--muted); font-size: 12.5px; font-family: var(--font-mono); }
+
+/* ---------- Table ---------- */
+.admin-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+    margin-top: 20px;
+}
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.admin-table th, .admin-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+}
+.admin-table th {
+    font-family: var(--font-display);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    background: var(--bg);
+}
+.admin-table tr:last-child td { border-bottom: none; }

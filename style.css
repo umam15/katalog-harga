@@ -1,0 +1,377 @@
+/* ==========================================================================
+   Katalog Harga — design tokens
+   Warm paper ledger look: navy for structure, amber for price (the one
+   number that matters), monospace for anything numeric/coded.
+   ========================================================================== */
+:root {
+    --bg: #F6F5F1;
+    --surface: #FFFFFF;
+    --ink: #1C2126;
+    --muted: #6B7280;
+    --border: #E4E1DA;
+
+    --primary: #1F3A5F;
+    --primary-tint: #EAF0F6;
+
+    --accent: #C08B2E;
+    --accent-tint: #FBF3E4;
+
+    --stock: #2F6844;
+    --stock-tint: #E9F3EC;
+    --danger: #B0413E;
+    --danger-tint: #FBEAEA;
+
+    --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --font-body: 'Inter', 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(28,33,38,0.06);
+    --shadow-md: 0 4px 16px rgba(28,33,38,0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--bg);
+    color: var(--ink);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+.topbar-simple { position: static; box-shadow: none; background: transparent; }
+.topbar-simple .btn-back { color: var(--primary); font-family: var(--font-display); font-weight: 600; }
+
+.topbar-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; text-decoration: none; }
+.brand-mark {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--ink);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+.brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: #fff;
+    font-size: 18px;
+}
+
+.search-form { flex: 1; min-width: 220px; }
+.search-box {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 14px;
+}
+.search-box::placeholder { color: rgba(255,255,255,0.65); }
+.search-box:focus {
+    outline: none;
+    background: #fff;
+    color: var(--ink);
+    border-color: var(--accent);
+}
+.search-box:focus::placeholder { color: var(--muted); }
+
+.btn-back {
+    display: inline-block;
+    padding: 8px 4px;
+    font-family: var(--font-display);
+    font-weight: 600;
+}
+
+/* ---------- Login / akun (top bar) ---------- */
+.auth-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.auth-whoami {
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    white-space: nowrap;
+}
+.auth-link {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13px;
+    color: #fff;
+    padding: 8px 4px;
+    white-space: nowrap;
+}
+
+
+/* ---------- Selector kantor/gudang ---------- */
+.kantor-form { flex-shrink: 0; }
+.kantor-select {
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.kantor-select:focus { outline: none; background: #fff; color: var(--ink); }
+.kantor-select option { color: var(--ink); }
+
+/* ---------- Result meta ---------- */
+.result-meta {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 16px 2px 10px;
+}
+
+/* ---------- Catalog list (grid-based table) ---------- */
+.catalog-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.catalog-head,
+.catalog-row {
+    display: grid;
+    grid-template-columns: 2.4fr 1fr 0.8fr 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+.price-head, .price-row { grid-template-columns: 0.8fr 1.4fr 1fr 1fr; }
+
+.catalog-head {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.catalog-row {
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.12s ease;
+}
+.catalog-row:last-child { border-bottom: none; }
+a.catalog-row:hover { background-color: var(--primary-tint); }
+a.catalog-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.col-item { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.thumb {
+    width: 40px; height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+}
+.item-name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.badge-inline {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 2px 8px;
+}
+.col-merek, .col-satuan { color: var(--muted); font-size: 13.5px; }
+
+.col-harga.price-tag {
+    justify-self: end;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--accent);
+    background: var(--accent-tint);
+    padding: 5px 10px;
+    border-radius: 6px;
+    border-left: 3px solid var(--accent);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Empty state ---------- */
+.empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--muted);
+}
+.empty-icon { font-size: 32px; display: block; margin-bottom: 10px; }
+.empty-clear {
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--primary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--primary);
+}
+
+/* ---------- Pagination ---------- */
+.pagination {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+.page-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 18px;
+    color: var(--primary);
+}
+.page-btn.is-disabled { opacity: 0.35; pointer-events: none; }
+.page-info { font-size: 13px; color: var(--muted); font-family: var(--font-mono); }
+
+/* ---------- Detail page ---------- */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+}
+.img-container img {
+    width: 100%; height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    position: sticky;
+    top: 90px;
+}
+.info-container {
+    /* Tanpa ini, grid item mengikuti lebar min-content isinya (mis. teks
+       panjang tanpa spasi di Keterangan), sehingga track 1fr melebar dan
+       word-wrap/overflow-wrap tidak pernah sempat terpicu. */
+    min-width: 0;
+}
+
+.item-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    margin: 0 0 12px;
+}
+
+.badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.badge {
+    font-size: 12.5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--ink);
+}
+.badge-mono { font-family: var(--font-mono); background: var(--primary-tint); color: var(--primary); border-color: transparent; }
+.badge-stock { background: var(--stock-tint); color: var(--stock); border-color: transparent; }
+.badge-out { background: var(--danger-tint); color: var(--danger); border-color: transparent; }
+
+.keterangan-block { margin-top: 16px; }
+.label-sm {
+    font-family: var(--font-display);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 4px;
+}
+.word-wrap { word-wrap: break-word; overflow-wrap: break-word; }
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    margin: 28px 2px 10px;
+}
+
+.unit-chip {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 12.5px;
+    background: var(--primary-tint);
+    color: var(--primary);
+    padding: 4px 9px;
+    border-radius: 6px;
+    justify-self: start;
+}
+.barcode-txt { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); letter-spacing: 0.02em; }
+.info-txt { font-size: 12.5px; color: var(--muted); }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 720px) {
+    .detail-grid { grid-template-columns: 1fr; padding: 16px; }
+    .img-container img { position: static; max-height: 260px; object-fit: cover; }
+
+    .catalog-head { display: none; }
+    .catalog-list { border: none; background: transparent; box-shadow: none; display: flex; flex-direction: column; gap: 10px; }
+    .catalog-row {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "item"
+            "meta"
+            "price";
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 12px 14px;
+        gap: 6px;
+    }
+    .price-row { grid-template-areas: "unit" "barcode" "price" "info"; }
+
+    .col-item { grid-area: item; }
+    .col-merek::before { content: "Merek: "; color: var(--ink); font-weight: 500; }
+    .col-satuan::before { content: "Satuan: "; color: var(--ink); font-weight: 500; }
+    .col-merek, .col-satuan { display: inline; font-size: 12.5px; }
+    .col-harga.price-tag { justify-self: start; margin-top: 4px; }
+
+    .unit-chip { grid-area: unit; }
+    .barcode-txt { grid-area: barcode; }
+    .info-txt { grid-area: info; }
+}
