@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased
+## v1.2.7
+- **Fallback tanpa JavaScript** untuk navigasi katalog: kalau JS nonaktif,
+  tombol "Muat lebih banyak"/infinite scroll disembunyikan dan diganti link
+  klasik Sebelumnya/Berikutnya (`<noscript>`) yang tetap bekerja lewat
+  parameter `?p=`. Sengaja dibuat minimal (cuma dua link + info halaman,
+  bukan daftar nomor halaman lengkap) supaya ringan untuk katalog dengan
+  banyak halaman.
+- **Optimalkan jumlah item per halaman**: dinaikkan dari 50 menjadi 80,
+  supaya pengguna tanpa JS butuh lebih sedikit klik untuk menjelajah
+  katalog. Query & gambar sudah cukup ringan (LATERAL join, cache gambar,
+  lazy loading) untuk menampung batch lebih besar tanpa dampak berarti.
+- README dipersingkat, termasuk memangkas catatan overhead performa Docker
+  yang tidak lagi krusial (image cache sudah membuat bedanya kecil).
+
+## v1.2.6
 - **Pagination klasik dihapus** dari `index.php` — infinite scroll (tombol
   "Muat lebih banyak" + auto-load saat scroll) sekarang jadi satu-satunya
   cara melihat item di luar 50 pertama. Menyederhanakan halaman (HTML lebih

@@ -33,7 +33,12 @@ $showStokKosong = $loggedIn ? true : get_show_stok_kosong();
 
 $search = trim($_GET['q'] ?? '');
 $page   = max(1, (int)($_GET['p'] ?? 1));
-$limit  = 50;
+// Dinaikkan dari 50 -> 80: browser tanpa JS sekarang pindah halaman lewat
+// link Sebelumnya/Berikutnya (lihat fallback <noscript> di bawah), jadi
+// batch lebih besar berarti lebih sedikit klik. Query katalog sudah
+// dioptimalkan (LATERAL join, tanpa N+1) dan gambar dimuat lazy + di-cache,
+// jadi menaikkan limit tidak menambah beban signifikan per halaman.
+$limit  = 80;
 $offset = ($page - 1) * $limit;
 
 // Dibanding versi sebelumnya: barcode dicek lewat EXISTS, bukan LEFT JOIN + DISTINCT.
@@ -227,6 +232,28 @@ $ajaxBaseQs = http_build_query($ajaxParams);
         <button type="button" id="loadMoreBtn" class="btn-load-more">Muat lebih banyak</button>
         <p id="loadMoreStatus" class="load-more-status" aria-live="polite"></p>
     </div>
+    <?php
+    // Fallback tanpa JavaScript: infinite scroll di atas butuh JS, jadi
+    // browser/pembaca tanpa JS perlu cara lain untuk pindah halaman.
+    // Sengaja dibuat minimal (cuma Sebelumnya/Berikutnya, bukan daftar
+    // nomor halaman lengkap) supaya tetap ringan walau katalog punya
+    // ratusan halaman. <noscript> juga menyembunyikan tombol "Muat lebih
+    // banyak" di atas karena tombol itu tidak berfungsi tanpa JS.
+    $prevQs = $ajaxBaseQs . ($ajaxBaseQs !== '' ? '&' : '') . 'p=' . ($page - 1);
+    $nextQs = $ajaxBaseQs . ($ajaxBaseQs !== '' ? '&' : '') . 'p=' . ($page + 1);
+    ?>
+    <noscript>
+        <style>.load-more-wrap { display: none; }</style>
+        <nav class="pager-fallback" aria-label="Navigasi halaman">
+            <?php if ($page > 1): ?>
+                <a class="pager-link" href="index.php?<?= htmlspecialchars($prevQs) ?>">&laquo; Sebelumnya</a>
+            <?php endif; ?>
+            <span class="pager-info">Halaman <?= $page ?> dari <?= $totalPages ?></span>
+            <?php if ($page < $totalPages): ?>
+                <a class="pager-link" href="index.php?<?= htmlspecialchars($nextQs) ?>">Berikutnya &raquo;</a>
+            <?php endif; ?>
+        </nav>
+    </noscript>
     <?php endif; ?>
 </main>
 
