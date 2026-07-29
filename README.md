@@ -29,7 +29,7 @@ Cara tercepat menjalankan aplikasi tanpa setup PHP manual.
 1. Pastikan [Docker](https://docs.docker.com/get-docker/) & Docker Compose sudah terpasang.
 2. Dari folder project, jalankan `docker compose up -d --build`.
 3. Buka `http://localhost:8080` (mengarah ke `maintenance.php` sampai database katalog di-setting), lalu `http://localhost:8080/admin/login.php` untuk buat akun admin pertama.
-4. Atur koneksi database di **Panel Admin -> Pengaturan Database** (kalau Postgres-nya juga jalan di Docker di komputer yang sama, pakai `host.docker.internal` sebagai host).
+4. Atur koneksi database di **Panel Admin -> Pengaturan Database**.
 
 Data pengaturan & akun (`data/settings.db`) disimpan di volume `katalog-data`. Kelola dengan `docker compose logs -f`, `docker compose down`, atau `docker compose down -v` (reset total).
 
