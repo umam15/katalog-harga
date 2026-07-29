@@ -9,10 +9,10 @@ $messageType = 'success';
 
 // Nilai form: mulai dari pengaturan tersimpan, lalu ditimpa input POST kalau ada (biar sticky saat error)
 $current = [
-    'db_host' => get_setting('db_host'),
-    'db_port' => get_setting('db_port'),
-    'db_name' => get_setting('db_name'),
-    'db_user' => get_setting('db_user'),
+    'db_host' => get_setting('db_host', ''),
+    'db_port' => get_setting('db_port', ''),
+    'db_name' => get_setting('db_name', ''),
+    'db_user' => get_setting('db_user', ''),
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -68,9 +68,7 @@ $csrf = csrf_token();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengaturan Database · Admin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../fonts/fonts.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="admin.css">
     <link rel="icon" href="../favicon.ico">
@@ -84,7 +82,7 @@ $csrf = csrf_token();
 
 <main class="container container-narrow">
     <h1 class="section-title" style="margin-top:0;">Pengaturan Database</h1>
-    <p class="muted-text">Kredensial koneksi PostgreSQL untuk katalog. Disimpan di <code>data/settings.sqlite</code>, tidak lagi di file kode.</p>
+    <p class="muted-text">Kredensial koneksi PostgreSQL untuk katalog. Disimpan di <code>data/settings.db</code>, tidak lagi di file kode.</p>
 
     <?php if ($message): ?>
         <div class="alert alert-<?= $messageType ?>"><?= htmlspecialchars($message) ?></div>

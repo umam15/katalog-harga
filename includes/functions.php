@@ -7,10 +7,94 @@ if (!defined('ROOT_PATH')) {
     // Fallback jika file ini di-require langsung tanpa lewat config.php
     define('ROOT_PATH', dirname(__DIR__));
 }
-define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.sqlite');
+define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.db');
+define('IMG_CACHE_PATH', ROOT_PATH . '/data/img-cache');
+
+/* --------------------------- Cache gambar ------------------------------ */
+// Sebelumnya image.php membuka koneksi PostgreSQL baru untuk SETIAP gambar,
+// termasuk 50 thumbnail per halaman katalog -> 50 koneksi DB sekali load.
+// Sekarang gambar (dan versi thumbnail-nya) disimpan di data/img-cache/
+// setelah pertama kali diambil, jadi request berikutnya cukup baca file,
+// tanpa sentuh database sama sekali.
+
+/** Pastikan folder cache gambar ada & bisa ditulis. */
+function ensure_img_cache_dir(): void {
+    if (!is_dir(IMG_CACHE_PATH)) {
+        @mkdir(IMG_CACHE_PATH, 0775, true);
+    }
+}
 
 /**
- * Buka (atau buat) settings.sqlite lewat PDO SQLite.
+ * Path file cache untuk sebuah kodeitem. Nama file di-hash (bukan pakai
+ * kodeitem apa adanya) supaya aman dari karakter aneh / path traversal
+ * lewat parameter ?id= di image.php.
+ */
+function img_cache_paths(string $id): array {
+    $hash = md5($id);
+    return [
+        'full'  => IMG_CACHE_PATH . "/$hash-full.bin",
+        'thumb' => IMG_CACHE_PATH . "/$hash-thumb.bin",
+        'none'  => IMG_CACHE_PATH . "/$hash.none",
+    ];
+}
+
+/**
+ * Buat thumbnail JPEG dari data gambar mentah. Mengembalikan null kalau
+ * ekstensi GD tidak tersedia atau datanya bukan format gambar yang dikenali
+ * (fallback aman: pemanggil tetap bisa serve gambar ukuran penuh).
+ */
+function make_thumbnail(string $binary, int $maxDim = 160, int $quality = 75): ?string {
+    if (!function_exists('imagecreatefromstring')) return null;
+    $src = @imagecreatefromstring($binary);
+    if (!$src) return null;
+
+    $w = imagesx($src);
+    $h = imagesy($src);
+    if ($w <= 0 || $h <= 0) { imagedestroy($src); return null; }
+
+    $scale = min(1, $maxDim / max($w, $h));
+    $newW  = max(1, (int) round($w * $scale));
+    $newH  = max(1, (int) round($h * $scale));
+
+    $dst = imagecreatetruecolor($newW, $newH);
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $w, $h);
+
+    ob_start();
+    imagejpeg($dst, null, $quality);
+    $out = ob_get_clean();
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    return $out !== false && $out !== '' ? $out : null;
+}
+
+/** Statistik cache gambar: jumlah file & total ukuran (byte), untuk ditampilkan di admin. */
+function img_cache_stats(): array {
+    if (!is_dir(IMG_CACHE_PATH)) return ['count' => 0, 'bytes' => 0];
+    $count = 0;
+    $bytes = 0;
+    foreach (glob(IMG_CACHE_PATH . '/*') as $f) {
+        if (is_file($f)) {
+            $count++;
+            $bytes += filesize($f);
+        }
+    }
+    return ['count' => $count, 'bytes' => $bytes];
+}
+
+/** Hapus semua file cache gambar (dipanggil dari admin kalau perlu paksa refresh). */
+function clear_img_cache(): int {
+    if (!is_dir(IMG_CACHE_PATH)) return 0;
+    $count = 0;
+    foreach (glob(IMG_CACHE_PATH . '/*') as $f) {
+        if (is_file($f) && @unlink($f)) $count++;
+    }
+    return $count;
+}
+
+/**
+ * Buka (atau buat) settings.db lewat PDO SQLite.
  * Skema dibuat otomatis kalau belum ada, dan nilai default database
  * (migrasi dari db_config.php versi lama) diisi sekali di awal supaya
  * situs tetap jalan tanpa admin harus setting ulang dari nol.
@@ -201,6 +285,53 @@ function ensure_session(): void {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
+}
+
+/* ------------------------- Backup / Restore --------------------------- */
+// Backup hanya mencakup tabel app_settings (pengaturan, termasuk kredensial
+// database). Akun admin/user TIDAK diikutkan supaya restore tidak pernah
+// mengubah atau mengunci akses login siapa pun - itu tetap dikelola lewat
+// admin/users.php.
+
+/** Ambil semua pengaturan sebagai array asosiatif key => value. */
+function get_all_settings(): array {
+    $stmt = get_settings_pdo()->query('SELECT key, value FROM app_settings ORDER BY key');
+    $out = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $out[$row['key']] = $row['value'];
+    }
+    return $out;
+}
+
+/** Bangun struktur backup (siap di-JSON-kan) berisi seluruh pengaturan saat ini. */
+function build_settings_backup(): array {
+    return [
+        'app'         => 'katalog-harga',
+        'type'        => 'settings-backup',
+        'version'     => 1,
+        'exported_at' => date('c'),
+        'settings'    => get_all_settings(),
+    ];
+}
+
+/**
+ * Terapkan backup pengaturan hasil parse JSON. Mengembalikan jumlah key yang
+ * berhasil ditulis. Melempar InvalidArgumentException kalau strukturnya tidak
+ * dikenali (bukan hasil export fitur ini) supaya file sembarangan tidak
+ * "menghilangkan" pengaturan yang ada secara diam-diam.
+ */
+function restore_settings_backup(array $data): int {
+    if (($data['type'] ?? null) !== 'settings-backup' || !isset($data['settings']) || !is_array($data['settings'])) {
+        throw new InvalidArgumentException('File bukan hasil backup pengaturan yang valid.');
+    }
+    $count = 0;
+    foreach ($data['settings'] as $key => $value) {
+        if (!is_string($key) || $key === '') continue;
+        if (!is_scalar($value)) continue;
+        set_setting($key, (string) $value);
+        $count++;
+    }
+    return $count;
 }
 
 /* --------------------- Autentikasi (admin & user) --------------------- */

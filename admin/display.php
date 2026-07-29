@@ -3,13 +3,21 @@ define('ROOT_PATH', dirname(__DIR__));
 require_once ROOT_PATH . '/includes/functions.php';
 require_admin();
 
-$pdo = get_pgsql_pdo();
-
 $message = '';
 $messageType = 'success';
+$dbError = null;
 
-$kantorList = get_kantor_list($pdo);
-$jenisList  = get_jenis_list($pdo);
+try {
+    $pdo = get_pgsql_pdo();
+    $kantorList = get_kantor_list($pdo);
+    $jenisList  = get_jenis_list($pdo);
+} catch (PDOException $e) {
+    // Database belum di-setting atau tidak bisa diakses - jangan fatal error,
+    // tampilkan pesan dan arahkan ke halaman Pengaturan Database.
+    $dbError = $e->getMessage();
+    $kantorList = [];
+    $jenisList  = [];
+}
 
 $current = [
     'default_kantor'         => get_setting('default_kantor', ''),
@@ -23,6 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf'] ?? null)) {
         $message = 'Sesi tidak valid, silakan coba lagi.';
         $messageType = 'danger';
+    } elseif (($_POST['action'] ?? '') === 'clear_img_cache') {
+        $cleared = clear_img_cache();
+        $message = "Cache gambar dibersihkan ($cleared file dihapus). Gambar akan diambil ulang dari database saat pertama kali diminta lagi.";
     } else {
         $defaultKantor         = trim($_POST['default_kantor'] ?? '');
         $selectedJenis         = $_POST['display_jenis'] ?? [];
@@ -59,6 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $csrf = csrf_token();
+$imgCacheStats = img_cache_stats();
+function format_bytes(int $bytes): string {
+    if ($bytes < 1024) return "$bytes B";
+    if ($bytes < 1024 * 1024) return round($bytes / 1024, 1) . ' KB';
+    return round($bytes / (1024 * 1024), 1) . ' MB';
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -66,9 +83,7 @@ $csrf = csrf_token();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengaturan Tampilan · Admin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../fonts/fonts.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="admin.css">
     <link rel="icon" href="../favicon.ico">
@@ -83,6 +98,13 @@ $csrf = csrf_token();
 <main class="container container-narrow">
     <h1 class="section-title" style="margin-top:0;">Pengaturan Tampilan</h1>
     <p class="muted-text">Mengatur apa yang dilihat pengunjung <strong>umum</strong> (tanpa login) di katalog. User dan admin yang login selalu melihat katalog lengkap tanpa batasan ini.</p>
+
+    <?php if ($dbError !== null): ?>
+        <div class="alert alert-danger">
+            Database tidak terhubung, daftar kantor &amp; tipe item tidak bisa dimuat (isi manual di bawah kalau perlu). Pengaturan lain di halaman ini tetap bisa disimpan.
+            Cek <a href="database.php">Pengaturan Database</a> untuk mengisi atau memperbaiki kredensial koneksi.
+        </div>
+    <?php endif; ?>
 
     <?php if ($message): ?>
         <div class="alert alert-<?= $messageType ?>"><?= htmlspecialchars($message) ?></div>
@@ -138,6 +160,22 @@ $csrf = csrf_token();
 
         <div class="btn-row">
             <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+    </form>
+
+    <h2 class="section-title">Cache Gambar</h2>
+    <p class="muted-text">
+        Gambar produk (termasuk thumbnail katalog) disimpan di <code>data/img-cache/</code>
+        setelah pertama kali diambil dari database, supaya request berikutnya tidak perlu
+        buka koneksi database lagi. Bersihkan cache ini kalau ada foto produk yang diganti
+        tapi kodeitem-nya sama (perubahannya tidak otomatis muncul selama cache masih ada).
+    </p>
+    <p><strong><?= $imgCacheStats['count'] ?></strong> file cache, total <strong><?= format_bytes($imgCacheStats['bytes']) ?></strong>.</p>
+    <form method="POST" class="stack-form" onsubmit="return confirm('Bersihkan semua cache gambar? Gambar akan diambil ulang dari database saat pertama kali diminta lagi.');">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf) ?>">
+        <input type="hidden" name="action" value="clear_img_cache">
+        <div class="btn-row">
+            <button type="submit" class="btn btn-secondary">Bersihkan cache gambar</button>
         </div>
     </form>
 </main>

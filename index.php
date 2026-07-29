@@ -33,7 +33,12 @@ $showStokKosong = $loggedIn ? true : get_show_stok_kosong();
 
 $search = trim($_GET['q'] ?? '');
 $page   = max(1, (int)($_GET['p'] ?? 1));
-$limit  = 50;
+// Dinaikkan dari 50 -> 80: browser tanpa JS sekarang pindah halaman lewat
+// link Sebelumnya/Berikutnya (lihat fallback <noscript> di bawah), jadi
+// batch lebih besar berarti lebih sedikit klik. Query katalog sudah
+// dioptimalkan (LATERAL join, tanpa N+1) dan gambar dimuat lazy + di-cache,
+// jadi menaikkan limit tidak menambah beban signifikan per halaman.
+$limit  = 80;
 $offset = ($page - 1) * $limit;
 
 // Dibanding versi sebelumnya: barcode dicek lewat EXISTS, bukan LEFT JOIN + DISTINCT.
@@ -100,6 +105,47 @@ $totalRows  = $items[0]['total_rows'] ?? 0;
 $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $limit) : 1;
 
 $hargaPembulatan = get_harga_pembulatan();
+
+// Mode fragment: dipakai JS infinite scroll untuk minta baris tambahan
+// tanpa reload seluruh halaman (tanpa <head>, header, dsb - cuma baris item).
+$isAjax = isset($_GET['ajax']) && $_GET['ajax'] === '1';
+
+/** Render baris katalog (dipakai baik di halaman penuh maupun fragment ajax). */
+function render_item_rows(array $items, int $hargaPembulatan): string {
+    ob_start();
+    foreach ($items as $row):
+        // Bulatkan ke ATAS ke kelipatan sesuai pengaturan admin (default 0 = tanpa pembulatan).
+        $harga = bulatkan_harga((float)$row['harga_raw'], $hargaPembulatan);
+        $kosong = (float)$row['stok'] <= 0;
+        ?>
+        <a class="catalog-row" href="detail.php?id=<?= urlencode($row['kodeitem']) ?>">
+            <span class="col-item">
+                <img class="thumb" src="image.php?id=<?= urlencode($row['kodeitem']) ?>&thumb=1" alt="" loading="lazy" width="40" height="40">
+                <span class="item-name"><?= htmlspecialchars($row['namaitem']) ?></span>
+                <?php if ($kosong): ?><span class="badge badge-out badge-inline">Stok kosong</span><?php endif; ?>
+            </span>
+            <span class="col-merek" data-label="Merek"><?= htmlspecialchars($row['merek']) ?></span>
+            <span class="col-satuan" data-label="Satuan"><?= htmlspecialchars($row['satuandasar']) ?></span>
+            <span class="col-harga price-tag">Rp <?= number_format($harga, 0, ',', '.') ?></span>
+        </a>
+        <?php
+    endforeach;
+    return ob_get_clean();
+}
+
+$rowsHtml = render_item_rows($items, $hargaPembulatan);
+
+if ($isAjax) {
+    header('Content-Type: text/html; charset=utf-8');
+    echo $rowsHtml;
+    exit;
+}
+
+// Query string dasar untuk link "muat lebih banyak" (tanpa p= dan ajax=,
+// itu ditambahkan oleh JS sendiri per-request).
+$ajaxParams = $_GET;
+unset($ajaxParams['p'], $ajaxParams['ajax'], $ajaxParams['kantor']);
+$ajaxBaseQs = http_build_query($ajaxParams);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -107,9 +153,7 @@ $hargaPembulatan = get_harga_pembulatan();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Katalog Harga</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="fonts/fonts.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.ico">
 </head>
@@ -177,33 +221,39 @@ $hargaPembulatan = get_harga_pembulatan();
                 <?php endif; ?>
             </div>
         <?php else: ?>
-            <?php foreach ($items as $row):
-                // Bulatkan ke ATAS ke kelipatan sesuai pengaturan admin (default 0 = tanpa pembulatan).
-                $harga = bulatkan_harga((float)$row['harga_raw'], $hargaPembulatan);
-                $kosong = (float)$row['stok'] <= 0;
-            ?>
-            <a class="catalog-row" href="detail.php?id=<?= urlencode($row['kodeitem']) ?>">
-                <span class="col-item">
-                    <img class="thumb" src="image.php?id=<?= urlencode($row['kodeitem']) ?>" alt="" loading="lazy" width="40" height="40">
-                    <span class="item-name"><?= htmlspecialchars($row['namaitem']) ?></span>
-                    <?php if ($kosong): ?><span class="badge badge-out badge-inline">Stok kosong</span><?php endif; ?>
-                </span>
-                <span class="col-merek" data-label="Merek"><?= htmlspecialchars($row['merek']) ?></span>
-                <span class="col-satuan" data-label="Satuan"><?= htmlspecialchars($row['satuandasar']) ?></span>
-                <span class="col-harga price-tag">Rp <?= number_format($harga, 0, ',', '.') ?></span>
-            </a>
-            <?php endforeach; ?>
+            <?= $rowsHtml ?>
         <?php endif; ?>
     </div>
 
-    <?php if (!empty($items)): ?>
-    <nav class="pagination">
-        <a class="page-btn <?= $page <= 1 ? 'is-disabled' : '' ?>"
-           href="?q=<?= urlencode($search) ?>&p=<?= max(1, $page - 1) ?>" aria-disabled="<?= $page <= 1 ? 'true' : 'false' ?>">&lsaquo;</a>
-        <span class="page-info">Halaman <?= $page ?> dari <?= $totalPages ?></span>
-        <a class="page-btn <?= $page >= $totalPages ? 'is-disabled' : '' ?>"
-           href="?q=<?= urlencode($search) ?>&p=<?= min($totalPages, $page + 1) ?>" aria-disabled="<?= $page >= $totalPages ? 'true' : 'false' ?>">&rsaquo;</a>
-    </nav>
+    <?php if (!empty($items) && $totalPages > 1): ?>
+    <div class="load-more-wrap" id="loadMoreWrap"
+         data-page="<?= $page ?>" data-total-pages="<?= $totalPages ?>"
+         data-qs="<?= htmlspecialchars($ajaxBaseQs) ?>">
+        <button type="button" id="loadMoreBtn" class="btn-load-more">Muat lebih banyak</button>
+        <p id="loadMoreStatus" class="load-more-status" aria-live="polite"></p>
+    </div>
+    <?php
+    // Fallback tanpa JavaScript: infinite scroll di atas butuh JS, jadi
+    // browser/pembaca tanpa JS perlu cara lain untuk pindah halaman.
+    // Sengaja dibuat minimal (cuma Sebelumnya/Berikutnya, bukan daftar
+    // nomor halaman lengkap) supaya tetap ringan walau katalog punya
+    // ratusan halaman. <noscript> juga menyembunyikan tombol "Muat lebih
+    // banyak" di atas karena tombol itu tidak berfungsi tanpa JS.
+    $prevQs = $ajaxBaseQs . ($ajaxBaseQs !== '' ? '&' : '') . 'p=' . ($page - 1);
+    $nextQs = $ajaxBaseQs . ($ajaxBaseQs !== '' ? '&' : '') . 'p=' . ($page + 1);
+    ?>
+    <noscript>
+        <style>.load-more-wrap { display: none; }</style>
+        <nav class="pager-fallback" aria-label="Navigasi halaman">
+            <?php if ($page > 1): ?>
+                <a class="pager-link" href="index.php?<?= htmlspecialchars($prevQs) ?>">&laquo; Sebelumnya</a>
+            <?php endif; ?>
+            <span class="pager-info">Halaman <?= $page ?> dari <?= $totalPages ?></span>
+            <?php if ($page < $totalPages): ?>
+                <a class="pager-link" href="index.php?<?= htmlspecialchars($nextQs) ?>">Berikutnya &raquo;</a>
+            <?php endif; ?>
+        </nav>
+    </noscript>
     <?php endif; ?>
 </main>
 
@@ -216,6 +266,69 @@ input.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => form.submit(), 1450);
 });
+
+// Infinite scroll: load-more-wrap sekarang satu-satunya navigasi (pagination
+// klasik sudah dihapus). Perlu JavaScript aktif untuk melihat item di luar
+// batch pertama.
+(() => {
+    const loadMoreWrap = document.getElementById('loadMoreWrap');
+    if (!loadMoreWrap || !window.fetch) return;
+
+    const catalogList = document.querySelector('.catalog-list');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const statusEl     = document.getElementById('loadMoreStatus');
+
+    let currentPage = parseInt(loadMoreWrap.dataset.page, 10) || 1;
+    const totalPages = parseInt(loadMoreWrap.dataset.totalPages, 10) || 1;
+    const baseQs = loadMoreWrap.dataset.qs || '';
+    let loading = false;
+
+    function updateVisibility() {
+        loadMoreWrap.hidden = currentPage >= totalPages;
+    }
+    updateVisibility();
+
+    async function loadMore() {
+        if (loading || currentPage >= totalPages) return;
+        loading = true;
+        loadMoreBtn.disabled = true;
+        statusEl.textContent = 'Memuat…';
+
+        const nextPage = currentPage + 1;
+        const qs = (baseQs ? baseQs + '&' : '') + 'p=' + nextPage + '&ajax=1';
+
+        try {
+            const res = await fetch('index.php?' + qs);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const html = await res.text();
+            if (html.trim() !== '') {
+                catalogList.insertAdjacentHTML('beforeend', html);
+            }
+            currentPage = nextPage;
+            statusEl.textContent = '';
+            updateVisibility();
+        } catch (e) {
+            statusEl.textContent = 'Gagal memuat item berikutnya. Coba lagi.';
+        } finally {
+            loading = false;
+            loadMoreBtn.disabled = false;
+        }
+    }
+
+    loadMoreBtn.addEventListener('click', loadMore);
+
+    // Auto-load saat tombol/area ini mulai kelihatan di layar (efek "infinite
+    // scroll"), sambil tombolnya tetap ada & bisa diklik manual sebagai
+    // fallback (juga lebih ramah pembaca layar daripada auto-load murni).
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) loadMore();
+            });
+        }, { rootMargin: '600px 0px' });
+        observer.observe(loadMoreWrap);
+    }
+})();
 </script>
 </body>
 </html>

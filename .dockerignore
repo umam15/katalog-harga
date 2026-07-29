@@ -1,0 +1,8 @@
+.git
+.gitignore
+README.md
+CHANGELOG.md
+TODO.md
+LICENSE
+data/*.db
+data/*.db-*

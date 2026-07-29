@@ -13,9 +13,7 @@ $adminTotal = admin_count();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin · Katalog Harga</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../fonts/fonts.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="admin.css">
     <link rel="icon" href="../favicon.ico">
@@ -42,7 +40,7 @@ $adminTotal = admin_count();
         <a href="database.php" class="admin-card">
             <span class="admin-card-icon">🗄️</span>
             <span class="admin-card-title">Pengaturan Database</span>
-            <span class="admin-card-desc"><?= htmlspecialchars($dbHost) ?> / <?= htmlspecialchars($dbName) ?></span>
+            <span class="admin-card-desc"><?= $dbHost ? htmlspecialchars($dbHost) . ' / ' . htmlspecialchars($dbName) : 'Belum diatur' ?></span>
         </a>
         <a href="users.php" class="admin-card">
             <span class="admin-card-icon">👤</span>
@@ -53,6 +51,11 @@ $adminTotal = admin_count();
             <span class="admin-card-icon">🖥️</span>
             <span class="admin-card-title">Pengaturan Tampilan</span>
             <span class="admin-card-desc">Kantor, tipe item &amp; stok kosong untuk umum</span>
+        </a>
+        <a href="backup.php" class="admin-card">
+            <span class="admin-card-icon">💾</span>
+            <span class="admin-card-title">Backup &amp; Restore</span>
+            <span class="admin-card-desc">Ekspor / impor pengaturan aplikasi</span>
         </a>
         <a href="../index.php" class="admin-card">
             <span class="admin-card-icon">🛒</span>

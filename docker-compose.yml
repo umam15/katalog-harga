@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      # Persist data/settings.db (pengaturan, akun admin/user) di luar container
+      - katalog-data:/var/www/html/data
+    restart: unless-stopped
+
+volumes:
+  katalog-data:

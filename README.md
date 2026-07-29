@@ -1,66 +1,48 @@
 # Katalog Harga iPos5
-Katalog Harga versi web, untuk aplikasi POS iPos5
+Katalog Harga versi web untuk aplikasi POS iPos5 — pencarian item, harga & stok per kantor/gudang, plus panel admin.
 
 ## Fitur
-- Cari & scan item (nama, merek, kode, jenis, barcode) dengan hasil otomatis (debounced), lengkap dengan gambar produk dan harga.
+- Cari & scan item (nama, merek, kode, jenis, barcode), lengkap gambar & harga.
 - Pilih kantor/gudang aktif, harga & stok menyesuaikan otomatis.
-- Halaman detail per item: daftar harga per satuan, barcode, dan info stok.
-- Panel admin untuk mengatur koneksi database, akun pengguna, dan tampilan katalog publik.
+- Halaman detail per item: harga per satuan, barcode, dan stok.
+- Panel admin: koneksi database, akun pengguna, pengaturan tampilan katalog.
 
 ## Peran pengguna
 | Peran | Login? | Akses |
 |---|---|---|
-| **Admin** | Ya | Akses penuh: katalog lengkap + panel admin (pengaturan database, manajemen pengguna, pengaturan tampilan). |
-| **User** | Ya | Akses terbatas: katalog lengkap (tanpa filter tampilan umum), tapi tidak bisa masuk panel admin. |
-| **Umum** | Tidak | Pengunjung tanpa login. Katalog yang dilihat mengikuti pengaturan tampilan yang diatur admin (kantor default, tipe item, dan status stok kosong) dan tidak bisa mengganti kantor. |
+| **Admin** | Ya | Katalog lengkap + panel admin. |
+| **User** | Ya | Katalog lengkap, tanpa akses panel admin. |
+| **Umum** | Tidak | Katalog sesuai pengaturan admin, tidak bisa ganti kantor. |
 
-Tombol **Login** ada di pojok kanan atas, di sebelah kotak pencarian. Akun pertama yang dibuat (lewat halaman login saat belum ada admin) otomatis menjadi admin.
+Tombol **Login** ada di pojok kanan atas. Akun pertama yang dibuat otomatis jadi admin.
 
-## Pengaturan tampilan (khusus untuk umum)
-Diatur admin lewat **Panel Admin -> Pengaturan Tampilan**:
-- **Kantor default untuk umum** - kantor/gudang yang ditampilkan ke pengunjung tanpa login saat pertama kali membuka katalog.
-- **Tipe item yang ditampilkan** - batasi tipe/jenis item yang muncul di katalog umum. Kosongkan semua untuk menampilkan seluruh tipe.
-- **Tampilkan item stok kosong** - default **tidak** (item dengan stok 0 disembunyikan dari pengunjung umum).
-
-Admin dan user yang login selalu melihat katalog lengkap tanpa batasan-batasan di atas.
-
-## Struktur file
-```
-katalog-harga/
-├── index.php            Katalog publik (pencarian, daftar item)
-├── detail.php           Detail item (harga per satuan, barcode, stok)
-├── image.php            Gambar produk (dari database)
-├── config.php           Bootstrap halaman publik
-├── maintenance.php      Halaman fallback saat koneksi database gagal
-├── includes/
-│   └── functions.php    Helper: pengaturan, autentikasi, koneksi DB, dsb.
-├── admin/
-│   ├── login.php         Login (admin & user) / setup akun admin pertama
-│   ├── logout.php
-│   ├── index.php         Dashboard admin
-│   ├── database.php      Pengaturan koneksi PostgreSQL
-│   ├── users.php         Manajemen akun (admin & user)
-│   └── display.php       Pengaturan tampilan katalog umum
-└── data/
-    └── settings.sqlite   Pengaturan aplikasi & akun (dibuat otomatis)
-```
-
-## Instalasi & setup awal
-1. Deploy semua file ke server PHP yang mendukung `pdo_pgsql` dan `pdo_sqlite`.
-2. Pastikan folder `data/` bisa ditulis oleh web server (untuk `settings.sqlite`).
+## Instalasi
+1. Deploy ke server PHP yang mendukung `pdo_pgsql` dan `pdo_sqlite`.
+2. Pastikan folder `data/` bisa ditulis web server.
 3. Buka `admin/login.php`, buat akun admin pertama.
 4. Atur koneksi database di **Panel Admin -> Pengaturan Database**.
-5. (Opsional) Atur tampilan katalog umum di **Panel Admin -> Pengaturan Tampilan**, dan tambah akun `user` di **Manajemen Pengguna** bila diperlukan.
+5. (Opsional) Atur tampilan katalog & tambah akun `user`.
+
+### Instalasi dengan Docker
+Cara tercepat menjalankan aplikasi tanpa setup PHP manual.
+
+1. Pastikan [Docker](https://docs.docker.com/get-docker/) & Docker Compose sudah terpasang.
+2. Dari folder project, jalankan `docker compose up -d --build`.
+3. Buka `http://localhost:8080` (mengarah ke `maintenance.php` sampai database katalog di-setting), lalu `http://localhost:8080/admin/login.php` untuk buat akun admin pertama.
+4. Atur koneksi database di **Panel Admin -> Pengaturan Database** (kalau Postgres-nya juga jalan di Docker di komputer yang sama, pakai `host.docker.internal` sebagai host).
+
+Data pengaturan & akun (`data/settings.db`) disimpan di volume `katalog-data`. Kelola dengan `docker compose logs -f`, `docker compose down`, atau `docker compose down -v` (reset total).
+
+## Performa
+
+- **Cache gambar** — `image.php` menyimpan produk & thumbnail di `data/img-cache/` setelah pertama diambil, jadi request berikutnya tidak buka koneksi PostgreSQL. Kalau foto produk diganti di iPos5 (kode item sama), bersihkan lewat **Panel Admin -> Pengaturan Tampilan -> Bersihkan cache gambar**.
+- **Index database** — query katalog & detail sudah dioptimalkan (LATERAL join, tanpa N+1), tapi kecepatan tetap tergantung index PostgreSQL. Kalau terasa lambat, jalankan `EXPLAIN ANALYZE` dan pertimbangkan index pada `tbl_itemstok(kantor, kodeitem)`, `tbl_item(jenis)`, `tbl_itemhj(kodeitem, satuan)`, `tbl_itemsatuanjml(kodeitem)` — atau index trigram (`pg_trgm`) untuk pencarian `ILIKE` di katalog besar.
+- **OPcache & kompresi** — aktif otomatis lewat Dockerfile. Deploy native: aktifkan opcache di `php.ini` dan `a2enmod deflate expires headers` + `AllowOverride All` supaya `.htaccess` terbaca.
 
 ## Kebutuhan sistem
-- PHP dengan ekstensi `pdo_pgsql`, `pdo_sqlite`, dan `zlib`
+- PHP dengan ekstensi `pdo_pgsql`, `pdo_sqlite`
 - Database katalog: PostgreSQL (iPos5)
+- (Opsional) Docker & Docker Compose
 
 ## Changelog
-### v1.1.5
-- Tambah pengaturan nilai pembulatan harga (ceil) di katalog, bisa diatur admin lewat spin button di **Panel Admin -> Pengaturan Tampilan** (default 0 = tanpa pembulatan).
-- Tambah opsi apakah pembulatan harga yang sama juga diterapkan di halaman detail item (checkbox, default tidak - detail menampilkan harga asli).
-
-### v1.1.1
-- Tambah pengaturan tampilan untuk admin: kantor default untuk umum, tipe item yang ditampilkan, dan opsi tampilkan stok kosong (default tidak).
-- Tambah peran pengguna: **admin** (akses penuh) dan **user** (bisa login, akses terbatas), selain **umum** (tanpa login).
+Lihat [CHANGELOG.md](CHANGELOG.md).
