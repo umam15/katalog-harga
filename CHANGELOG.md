@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.8
+- Tambah versi rilis di aplikasi: konstanta `APP_VERSION` (di
+  `includes/functions.php`) sekarang ditampilkan di Panel Admin ->
+  Dashboard, supaya versi yang berjalan di server bisa dicek langsung dari
+  UI tanpa buka `CHANGELOG.md`.
+
 ## v1.2.7
 - **Fallback tanpa JavaScript** untuk navigasi katalog: kalau JS nonaktif,
   tombol "Muat lebih banyak"/infinite scroll disembunyikan dan diganti link
