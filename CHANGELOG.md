@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased
+- **Pagination klasik dihapus** dari `index.php` — infinite scroll (tombol
+  "Muat lebih banyak" + auto-load saat scroll) sekarang jadi satu-satunya
+  cara melihat item di luar 50 pertama. Menyederhanakan halaman (HTML lebih
+  ringkas, tidak ada dua sistem navigasi paralel), dengan konsekuensi:
+  **butuh JavaScript aktif** untuk mengakses item di luar batch pertama.
+- **Infinite scroll di katalog** (`index.php`): item baru otomatis dimuat
+  saat scroll ke bawah, tanpa reload halaman penuh - lewat endpoint fragment
+  (`?ajax=1`) yang cuma mengembalikan baris item, bukan seluruh HTML.
+  Tombol "Muat lebih banyak" manual juga selalu ada (auto-load pakai
+  `IntersectionObserver`, tombol untuk kontrol eksplisit / pembaca layar).
+- Tambah tombol **"Bersihkan cache gambar"** di Panel Admin -> Pengaturan
+  Tampilan, plus info jumlah file & ukuran cache saat ini.
+- Tambah `.htaccess` di root: kompresi gzip (HTML/CSS/JS) dan cache header
+  untuk aset statis (CSS/JS/ikon). Dockerfile mengaktifkan modul Apache
+  `deflate`, `expires`, `headers` dan `AllowOverride All` supaya
+  `.htaccess` benar-benar dipakai.
+- **Font di-self-host** (Space Grotesk, Inter, JetBrains Mono, format
+  woff2, lisensi SIL OFL - lihat `fonts/LICENSE.txt`), menggantikan request
+  ke `fonts.googleapis.com`/`fonts.gstatic.com` yang sebelumnya dipanggil
+  di setiap halaman (index, detail, semua halaman admin).
+- **Performa besar di `image.php`**: gambar produk (termasuk thumbnail di
+  daftar katalog) sekarang di-cache ke `data/img-cache/` setelah pertama
+  kali diambil. Sebelumnya SETIAP gambar membuka koneksi PostgreSQL baru -
+  satu halaman katalog dengan 50 item = 50 koneksi DB. Sekarang hanya cache
+  miss yang menyentuh database.
+- Tambah thumbnail terpisah (maks ~160px, kualitas 75) untuk daftar katalog
+  lewat ekstensi GD, dipakai lewat `image.php?...&thumb=1`. Kalau GD tidak
+  tersedia, otomatis fallback ke gambar ukuran penuh (tetap jalan, cuma
+  tidak seringan dengan thumbnail).
+- Tambah dukungan `ETag`/`If-None-Match` di `image.php` supaya browser bisa
+  dapat `304 Not Modified` tanpa transfer ulang gambar setelah cache 1 hari
+  di browser habis.
+- Dockerfile: tambah ekstensi `gd` (untuk thumbnail) dan aktifkan `opcache`
+  dengan konfigurasi di `docker/opcache.ini`.
+
 ## v1.2
 - Tambah dukungan Docker: `Dockerfile` & `docker-compose.yml` untuk menjalankan aplikasi via `docker compose up -d --build` (PHP 8.2 + Apache, ekstensi `pdo_pgsql` & `pdo_sqlite` sudah termasuk, folder `data/` dipersist lewat Docker volume).
 - Tambah panduan instalasi via Docker di README.

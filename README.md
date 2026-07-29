@@ -26,7 +26,7 @@ Tombol **Login** ada di pojok kanan atas. Akun pertama yang dibuat otomatis jadi
 ### Instalasi dengan Docker
 Cara tercepat menjalankan aplikasi tanpa setup PHP manual.
 
-> **Catatan:** Docker menambah overhead resource. Untuk katalog dengan banyak item bergambar (`image.php` encode/decode base64 dari BLOB PostgreSQL tiap request, cukup berat), instalasi native lewat langkah **Instalasi** di atas lebih ringan untuk server dengan resource terbatas. Pakai Docker kalau lebih mengutamakan kemudahan setup/isolasi.
+> **Catatan:** Docker menambah sedikit overhead resource dibanding instalasi native, tapi sejak `image.php` memakai cache disk (lihat [Performa](#performa) di bawah), bedanya kecil untuk katalog dengan banyak item bergambar. Pakai Docker kalau lebih mengutamakan kemudahan setup/isolasi.
 
 1. Pastikan [Docker](https://docs.docker.com/get-docker/) & Docker Compose sudah terpasang.
 2. Dari folder project, jalankan:
@@ -45,6 +45,44 @@ docker compose logs -f     # lihat log
 docker compose down        # hentikan & hapus container (volume tetap ada)
 docker compose down -v     # hentikan & hapus container + volume (reset total)
 ```
+
+## Performa
+
+**Cache gambar.** `image.php` menyimpan salinan gambar produk (dan versi
+thumbnail untuk daftar katalog) di `data/img-cache/` setelah pertama kali
+diambil dari database, supaya request berikutnya tidak perlu buka koneksi
+PostgreSQL lagi. Konsekuensinya: kalau foto produk diganti di iPos5 tapi
+`kodeitem`-nya sama, perubahan itu **tidak otomatis muncul** selama cache
+masih ada. Bersihkan lewat **Panel Admin -> Pengaturan Tampilan -> Bersihkan
+cache gambar** setiap kali mengganti foto produk.
+
+**Index database (opsional, untuk katalog dengan banyak item).** Query
+katalog & detail sudah dioptimalkan di sisi SQL (LATERAL join, tanpa N+1),
+tapi kecepatan akhirnya tetap tergantung index di sisi PostgreSQL iPos5.
+Kalau katalog terasa lambat khususnya saat pencarian atau ganti kantor,
+jalankan `EXPLAIN ANALYZE` pada query di `index.php`/`detail.php` dan
+pertimbangkan index berikut kalau belum ada (sesuaikan nama index dengan
+konvensi database kamu, dan uji dulu di database non-produksi):
+
+```sql
+-- Filter & join yang sering dipakai katalog
+CREATE INDEX IF NOT EXISTS idx_itemstok_kantor_kodeitem ON tbl_itemstok (kantor, kodeitem);
+CREATE INDEX IF NOT EXISTS idx_item_jenis               ON tbl_item (jenis);
+CREATE INDEX IF NOT EXISTS idx_itemhj_kodeitem_satuan    ON tbl_itemhj (kodeitem, satuan);
+CREATE INDEX IF NOT EXISTS idx_itemsatuanjml_kodeitem    ON tbl_itemsatuanjml (kodeitem);
+
+-- Pencarian ILIKE '%kata%' tidak bisa pakai index B-tree biasa secara
+-- optimal; kalau volume item besar dan pencarian terasa lambat,
+-- pertimbangkan index trigram (butuh extension pg_trgm):
+-- CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- CREATE INDEX IF NOT EXISTS idx_item_namaitem_trgm ON tbl_item USING gin (namaitem gin_trgm_ops);
+```
+
+**OPcache & kompresi.** Sudah aktif otomatis lewat Dockerfile
+(`docker-php-ext-enable opcache`, `a2enmod deflate expires headers`, plus
+`.htaccess` di root). Kalau deploy native (bukan Docker), pastikan opcache
+diaktifkan di `php.ini` dan modul Apache di atas ikut di-`a2enmod` +
+`AllowOverride All` supaya `.htaccess` terbaca.
 
 ## Kebutuhan sistem
 - PHP dengan ekstensi `pdo_pgsql`, `pdo_sqlite`

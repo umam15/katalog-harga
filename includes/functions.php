@@ -8,6 +8,90 @@ if (!defined('ROOT_PATH')) {
     define('ROOT_PATH', dirname(__DIR__));
 }
 define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.db');
+define('IMG_CACHE_PATH', ROOT_PATH . '/data/img-cache');
+
+/* --------------------------- Cache gambar ------------------------------ */
+// Sebelumnya image.php membuka koneksi PostgreSQL baru untuk SETIAP gambar,
+// termasuk 50 thumbnail per halaman katalog -> 50 koneksi DB sekali load.
+// Sekarang gambar (dan versi thumbnail-nya) disimpan di data/img-cache/
+// setelah pertama kali diambil, jadi request berikutnya cukup baca file,
+// tanpa sentuh database sama sekali.
+
+/** Pastikan folder cache gambar ada & bisa ditulis. */
+function ensure_img_cache_dir(): void {
+    if (!is_dir(IMG_CACHE_PATH)) {
+        @mkdir(IMG_CACHE_PATH, 0775, true);
+    }
+}
+
+/**
+ * Path file cache untuk sebuah kodeitem. Nama file di-hash (bukan pakai
+ * kodeitem apa adanya) supaya aman dari karakter aneh / path traversal
+ * lewat parameter ?id= di image.php.
+ */
+function img_cache_paths(string $id): array {
+    $hash = md5($id);
+    return [
+        'full'  => IMG_CACHE_PATH . "/$hash-full.bin",
+        'thumb' => IMG_CACHE_PATH . "/$hash-thumb.bin",
+        'none'  => IMG_CACHE_PATH . "/$hash.none",
+    ];
+}
+
+/**
+ * Buat thumbnail JPEG dari data gambar mentah. Mengembalikan null kalau
+ * ekstensi GD tidak tersedia atau datanya bukan format gambar yang dikenali
+ * (fallback aman: pemanggil tetap bisa serve gambar ukuran penuh).
+ */
+function make_thumbnail(string $binary, int $maxDim = 160, int $quality = 75): ?string {
+    if (!function_exists('imagecreatefromstring')) return null;
+    $src = @imagecreatefromstring($binary);
+    if (!$src) return null;
+
+    $w = imagesx($src);
+    $h = imagesy($src);
+    if ($w <= 0 || $h <= 0) { imagedestroy($src); return null; }
+
+    $scale = min(1, $maxDim / max($w, $h));
+    $newW  = max(1, (int) round($w * $scale));
+    $newH  = max(1, (int) round($h * $scale));
+
+    $dst = imagecreatetruecolor($newW, $newH);
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $w, $h);
+
+    ob_start();
+    imagejpeg($dst, null, $quality);
+    $out = ob_get_clean();
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    return $out !== false && $out !== '' ? $out : null;
+}
+
+/** Statistik cache gambar: jumlah file & total ukuran (byte), untuk ditampilkan di admin. */
+function img_cache_stats(): array {
+    if (!is_dir(IMG_CACHE_PATH)) return ['count' => 0, 'bytes' => 0];
+    $count = 0;
+    $bytes = 0;
+    foreach (glob(IMG_CACHE_PATH . '/*') as $f) {
+        if (is_file($f)) {
+            $count++;
+            $bytes += filesize($f);
+        }
+    }
+    return ['count' => $count, 'bytes' => $bytes];
+}
+
+/** Hapus semua file cache gambar (dipanggil dari admin kalau perlu paksa refresh). */
+function clear_img_cache(): int {
+    if (!is_dir(IMG_CACHE_PATH)) return 0;
+    $count = 0;
+    foreach (glob(IMG_CACHE_PATH . '/*') as $f) {
+        if (is_file($f) && @unlink($f)) $count++;
+    }
+    return $count;
+}
 
 /**
  * Buka (atau buat) settings.db lewat PDO SQLite.

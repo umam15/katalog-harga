@@ -1,0 +1,14 @@
+Font-font di folder ini (Space Grotesk, Inter, JetBrains Mono) berlisensi
+SIL Open Font License, Version 1.1 - bebas dipakai, dimodifikasi, dan
+didistribusikan ulang (termasuk untuk keperluan komersial), dengan syarat
+tidak dijual sendirian sebagai produk font.
+
+- Space Grotesk: Copyright 2020 The Space Grotesk Project Authors
+  https://github.com/floriankarsten/space-grotesk
+- Inter: Copyright 2016 The Inter Project Authors
+  https://github.com/rsms/inter
+- JetBrains Mono: Copyright 2020 The JetBrains Mono Project Authors
+  https://github.com/JetBrains/JetBrainsMono
+
+Lisensi lengkap: http://scripts.sil.org/OFL
+Diambil lewat paket npm @fontsource (fontsource.org) versi 5.3.0.
