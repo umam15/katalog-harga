@@ -54,6 +54,11 @@ $adminTotal = admin_count();
             <span class="admin-card-title">Pengaturan Tampilan</span>
             <span class="admin-card-desc">Kantor, tipe item &amp; stok kosong untuk umum</span>
         </a>
+        <a href="backup.php" class="admin-card">
+            <span class="admin-card-icon">💾</span>
+            <span class="admin-card-title">Backup &amp; Restore</span>
+            <span class="admin-card-desc">Ekspor / impor pengaturan aplikasi</span>
+        </a>
         <a href="../index.php" class="admin-card">
             <span class="admin-card-icon">🛒</span>
             <span class="admin-card-title">Lihat Katalog</span>
