@@ -13,6 +13,8 @@
   lazy loading) untuk menampung batch lebih besar tanpa dampak berarti.
 - README dipersingkat, termasuk memangkas catatan overhead performa Docker
   yang tidak lagi krusial (image cache sudah membuat bedanya kecil).
+- Tambah `.gitignore` (baru) dan update `.dockerignore`: `TODO.md` (catatan
+  kerja internal) tidak lagi ikut ke repo git maupun image Docker.
 
 ## v1.2.6
 - **Pagination klasik dihapus** dari `index.php` — infinite scroll (tombol
