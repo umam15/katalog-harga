@@ -203,6 +203,53 @@ function ensure_session(): void {
     }
 }
 
+/* ------------------------- Backup / Restore --------------------------- */
+// Backup hanya mencakup tabel app_settings (pengaturan, termasuk kredensial
+// database). Akun admin/user TIDAK diikutkan supaya restore tidak pernah
+// mengubah atau mengunci akses login siapa pun - itu tetap dikelola lewat
+// admin/users.php.
+
+/** Ambil semua pengaturan sebagai array asosiatif key => value. */
+function get_all_settings(): array {
+    $stmt = get_settings_pdo()->query('SELECT key, value FROM app_settings ORDER BY key');
+    $out = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $out[$row['key']] = $row['value'];
+    }
+    return $out;
+}
+
+/** Bangun struktur backup (siap di-JSON-kan) berisi seluruh pengaturan saat ini. */
+function build_settings_backup(): array {
+    return [
+        'app'         => 'katalog-harga',
+        'type'        => 'settings-backup',
+        'version'     => 1,
+        'exported_at' => date('c'),
+        'settings'    => get_all_settings(),
+    ];
+}
+
+/**
+ * Terapkan backup pengaturan hasil parse JSON. Mengembalikan jumlah key yang
+ * berhasil ditulis. Melempar InvalidArgumentException kalau strukturnya tidak
+ * dikenali (bukan hasil export fitur ini) supaya file sembarangan tidak
+ * "menghilangkan" pengaturan yang ada secara diam-diam.
+ */
+function restore_settings_backup(array $data): int {
+    if (($data['type'] ?? null) !== 'settings-backup' || !isset($data['settings']) || !is_array($data['settings'])) {
+        throw new InvalidArgumentException('File bukan hasil backup pengaturan yang valid.');
+    }
+    $count = 0;
+    foreach ($data['settings'] as $key => $value) {
+        if (!is_string($key) || $key === '') continue;
+        if (!is_scalar($value)) continue;
+        set_setting($key, (string) $value);
+        $count++;
+    }
+    return $count;
+}
+
 /* --------------------- Autentikasi (admin & user) --------------------- */
 // Dua peran bisa login lewat form yang sama (admin/login.php):
 //   - admin : akses penuh, termasuk panel admin/pengaturan
