@@ -84,7 +84,7 @@ $csrf = csrf_token();
 
 <main class="container container-narrow">
     <h1 class="section-title" style="margin-top:0;">Pengaturan Database</h1>
-    <p class="muted-text">Kredensial koneksi PostgreSQL untuk katalog. Disimpan di <code>data/settings.sqlite</code>, tidak lagi di file kode.</p>
+    <p class="muted-text">Kredensial koneksi PostgreSQL untuk katalog. Disimpan di <code>data/settings.db</code>, tidak lagi di file kode.</p>
 
     <?php if ($message): ?>
         <div class="alert alert-<?= $messageType ?>"><?= htmlspecialchars($message) ?></div>

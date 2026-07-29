@@ -2,7 +2,7 @@ FROM php:8.2-apache
 
 # Ekstensi PHP yang dibutuhkan aplikasi: pdo_pgsql (koneksi ke database
 # katalog iPos5/PostgreSQL) dan pdo_sqlite (penyimpanan pengaturan & akun di
-# data/settings.sqlite).
+# data/settings.db).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libpq-dev \
@@ -20,7 +20,7 @@ WORKDIR /var/www/html
 
 COPY . /var/www/html
 
-# Folder data/ harus bisa ditulis oleh web server (menyimpan settings.sqlite)
+# Folder data/ harus bisa ditulis oleh web server (menyimpan settings.db)
 RUN chown -R www-data:www-data /var/www/html/data \
     && chmod -R 775 /var/www/html/data
 

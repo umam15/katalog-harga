@@ -7,10 +7,10 @@ if (!defined('ROOT_PATH')) {
     // Fallback jika file ini di-require langsung tanpa lewat config.php
     define('ROOT_PATH', dirname(__DIR__));
 }
-define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.sqlite');
+define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.db');
 
 /**
- * Buka (atau buat) settings.sqlite lewat PDO SQLite.
+ * Buka (atau buat) settings.db lewat PDO SQLite.
  * Skema dibuat otomatis kalau belum ada, dan nilai default database
  * (migrasi dari db_config.php versi lama) diisi sekali di awal supaya
  * situs tetap jalan tanpa admin harus setting ulang dari nol.

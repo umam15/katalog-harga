@@ -3,5 +3,5 @@
 README.md
 CHANGELOG.md
 LICENSE
-data/*.sqlite
-data/*.sqlite-*
+data/*.db
+data/*.db-*

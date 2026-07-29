@@ -37,7 +37,7 @@ Cara tercepat menjalankan aplikasi tanpa setup PHP manual.
 4. Buka `http://localhost:8080/admin/login.php`, buat akun admin pertama.
 5. Atur koneksi database di **Panel Admin -> Pengaturan Database** (arahkan ke server PostgreSQL iPos5 kamu; kalau Postgres-nya juga jalan di Docker di komputer yang sama, pakai `host.docker.internal` sebagai host).
 
-Data pengaturan & akun (`data/settings.sqlite`) disimpan di Docker volume `katalog-data` supaya tidak hilang saat container dibuat ulang.
+Data pengaturan & akun (`data/settings.db`) disimpan di Docker volume `katalog-data` supaya tidak hilang saat container dibuat ulang.
 
 Perintah lain yang berguna:
 ```bash
