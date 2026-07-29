@@ -26,6 +26,8 @@ Tombol **Login** ada di pojok kanan atas. Akun pertama yang dibuat otomatis jadi
 ### Instalasi dengan Docker
 Cara tercepat menjalankan aplikasi tanpa setup PHP manual.
 
+> **Catatan:** Docker menambah overhead resource (image PHP+Apache, layer container, dll). Kalau server kamu resource-nya terbatas (mis. VPS kecil / shared hosting dengan RAM pas-pasan), instalasi native lewat langkah **Instalasi** di atas biasanya lebih ringan & lebih cocok, karena PHP-nya jalan langsung di web server yang sudah ada. Pakai Docker kalau kamu lebih mengutamakan kemudahan setup/isolasi lingkungan dibanding penghematan resource.
+
 1. Pastikan [Docker](https://docs.docker.com/get-docker/) & Docker Compose sudah terpasang.
 2. Dari folder project, jalankan:
    ```bash
