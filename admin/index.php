@@ -42,7 +42,7 @@ $adminTotal = admin_count();
         <a href="database.php" class="admin-card">
             <span class="admin-card-icon">🗄️</span>
             <span class="admin-card-title">Pengaturan Database</span>
-            <span class="admin-card-desc"><?= htmlspecialchars($dbHost) ?> / <?= htmlspecialchars($dbName) ?></span>
+            <span class="admin-card-desc"><?= $dbHost ? htmlspecialchars($dbHost) . ' / ' . htmlspecialchars($dbName) : 'Belum diatur' ?></span>
         </a>
         <a href="users.php" class="admin-card">
             <span class="admin-card-icon">👤</span>

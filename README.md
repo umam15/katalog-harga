@@ -17,15 +17,37 @@ Katalog Harga versi web untuk aplikasi POS iPos5 — pencarian item, harga & sto
 Tombol **Login** ada di pojok kanan atas. Akun pertama yang dibuat otomatis jadi admin.
 
 ## Instalasi
-1. Deploy ke server PHP yang mendukung `pdo_pgsql`, `pdo_sqlite`, dan `zlib`.
+1. Deploy ke server PHP yang mendukung `pdo_pgsql` dan `pdo_sqlite`.
 2. Pastikan folder `data/` bisa ditulis web server.
 3. Buka `admin/login.php`, buat akun admin pertama.
 4. Atur koneksi database di **Panel Admin -> Pengaturan Database**.
 5. (Opsional) Atur tampilan katalog & tambah akun `user`.
 
+### Instalasi dengan Docker
+Cara tercepat menjalankan aplikasi tanpa setup PHP manual.
+
+1. Pastikan [Docker](https://docs.docker.com/get-docker/) & Docker Compose sudah terpasang.
+2. Dari folder project, jalankan:
+   ```bash
+   docker compose up -d --build
+   ```
+3. Buka `http://localhost:8080` di browser. Halaman awal akan mengarah ke `maintenance.php` sampai database katalog di-setting.
+4. Buka `http://localhost:8080/admin/login.php`, buat akun admin pertama.
+5. Atur koneksi database di **Panel Admin -> Pengaturan Database** (arahkan ke server PostgreSQL iPos5 kamu; kalau Postgres-nya juga jalan di Docker di komputer yang sama, pakai `host.docker.internal` sebagai host).
+
+Data pengaturan & akun (`data/settings.sqlite`) disimpan di Docker volume `katalog-data` supaya tidak hilang saat container dibuat ulang.
+
+Perintah lain yang berguna:
+```bash
+docker compose logs -f     # lihat log
+docker compose down        # hentikan & hapus container (volume tetap ada)
+docker compose down -v     # hentikan & hapus container + volume (reset total)
+```
+
 ## Kebutuhan sistem
-- PHP dengan ekstensi `pdo_pgsql`, `pdo_sqlite`, `zlib`
+- PHP dengan ekstensi `pdo_pgsql`, `pdo_sqlite`
 - Database katalog: PostgreSQL (iPos5)
+- (Opsional) Docker & Docker Compose, jika memakai instalasi via Docker
 
 ## Changelog
 Lihat [CHANGELOG.md](CHANGELOG.md).

@@ -9,10 +9,10 @@ $messageType = 'success';
 
 // Nilai form: mulai dari pengaturan tersimpan, lalu ditimpa input POST kalau ada (biar sticky saat error)
 $current = [
-    'db_host' => get_setting('db_host'),
-    'db_port' => get_setting('db_port'),
-    'db_name' => get_setting('db_name'),
-    'db_user' => get_setting('db_user'),
+    'db_host' => get_setting('db_host', ''),
+    'db_port' => get_setting('db_port', ''),
+    'db_name' => get_setting('db_name', ''),
+    'db_user' => get_setting('db_user', ''),
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
