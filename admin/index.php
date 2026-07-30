@@ -63,6 +63,10 @@ $adminTotal = admin_count();
             <span class="admin-card-desc">Kembali ke tampilan publik</span>
         </a>
     </div>
+
+    <p class="muted-text" style="margin-top:2rem; text-align:center; font-size:0.85rem;">
+        Katalog Harga v<?= htmlspecialchars(APP_VERSION) ?>
+    </p>
 </main>
 </body>
 </html>

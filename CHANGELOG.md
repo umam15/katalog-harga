@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.2.9
+- **Bisa di-install sebagai app (PWA)**: tambah `manifest.json` + ikon
+  (`icons/icon-192.png`, `icons/icon-512.png`, versi maskable) supaya
+  katalog bisa di-"Add to Home Screen"/di-install lewat browser (ikon
+  sendiri, tampil `standalone` tanpa address bar).
+- Tambah service worker (`sw.php`) untuk syarat instalasi PWA. **Sengaja
+  cuma cache aset statis** (CSS, font, ikon, manifest) - `index.php`,
+  `detail.php`, `image.php`, endpoint `?ajax=1`, dan semua `admin/*`
+  SELALU lewat jaringan langsung, tidak pernah disajikan dari cache,
+  supaya harga & stok yang tampil selalu data terbaru (tidak ada risiko
+  data basi ala cache offline). Dibuat `.php` (bukan `.js` statis) supaya
+  nama cache otomatis ikut naik tiap rilis lewat `APP_VERSION`, jadi
+  klien lama otomatis dibersihkan tanpa perlu bump versi manual di kode
+  service worker.
+- Tambah `<link rel="manifest">`, `theme-color`, dan `apple-touch-icon`
+  di `index.php` & `detail.php` (dua halaman yang bisa jadi entry point,
+  termasuk landing langsung dari scan barcode/QR ke halaman detail).
+
+## v1.2.8
+- Tambah versi rilis di aplikasi: konstanta `APP_VERSION` (di
+  `includes/functions.php`) sekarang ditampilkan di Panel Admin ->
+  Dashboard, supaya versi yang berjalan di server bisa dicek langsung dari
+  UI tanpa buka `CHANGELOG.md`.
+
 ## v1.2.7
 - **Fallback tanpa JavaScript** untuk navigasi katalog: kalau JS nonaktif,
   tombol "Muat lebih banyak"/infinite scroll disembunyikan dan diganti link

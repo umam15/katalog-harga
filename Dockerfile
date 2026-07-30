@@ -40,6 +40,17 @@ WORKDIR /var/www/html
 
 COPY . /var/www/html
 
+# Normalisasi permission seluruh aplikasi. COPY mempertahankan mode file
+# apa adanya dari build context (host) - kalau host punya permission yang
+# terlalu ketat (mis. hasil ekstrak zip dengan umask restriktif), Apache
+# yang jalan sebagai www-data bisa gagal baca .htaccess dengan error
+# "Server unable to read htaccess file, denying access to be safe".
+# Set eksplisit: direktori 755, file 644, supaya www-data selalu bisa
+# baca & traverse apapun kondisi host-nya.
+RUN chown -R www-data:www-data /var/www/html \
+    && find /var/www/html -type d -exec chmod 755 {} \; \
+    && find /var/www/html -type f -exec chmod 644 {} \;
+
 # Folder data/ harus bisa ditulis oleh web server (menyimpan settings.db
 # dan cache gambar produk di data/img-cache/, dibuat otomatis saat pertama
 # kali ada request gambar).
