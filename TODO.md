@@ -1,12 +1,40 @@
-# TODO — Optimasi Performa
+# TODO
 
-Semua item optimasi yang direncanakan sudah selesai dikerjakan — detail
-masing-masing ada di [CHANGELOG.md](CHANGELOG.md) (lihat entri v1.2.6 dan
-v1.2.7). Tidak ada item pending saat ini.
+Belum ada pekerjaan yang sedang berjalan. Daftar di bawah adalah usulan
+hasil review singkat kode (bukan item yang sudah diminta/dikonfirmasi),
+diurutkan dari yang menurut saya paling berdampak.
 
-## Sudah baik, tidak perlu diubah
-- Query katalog: 1 query dengan `LATERAL JOIN` + `COUNT(*) OVER()` untuk
-  pagination — sudah menghindari N+1 dan query count terpisah.
-- Query detail: barcode diambil sekali lalu dikelompokkan di PHP — sudah
-  menghindari N+1 loop.
-- `get_settings_pdo()` pakai static singleton per-request — sudah tepat.
+## Keamanan
+- [ ] **Proteksi brute-force di `admin/login.php`** — saat ini tidak ada
+  pembatasan percobaan login (tidak ada lockout/delay setelah beberapa
+  kali password salah). Pertimbangkan rate-limit sederhana per
+  IP/username (mis. counter di `settings.db` + jeda setelah N kali gagal).
+- [ ] **Security header di `.htaccess`/`config.php`** — belum ada
+  `X-Frame-Options`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy`, dan `Content-Security-Policy`. Kompresi & cache
+  header sudah ada, tinggal tambah header keamanan di blok
+  `mod_headers` yang sama.
+- [ ] **Alur reset password admin** — kalau satu-satunya akun admin lupa
+  password, tidak ada jalan keluar selain akses langsung ke
+  `data/settings.db`. Pertimbangkan perintah CLI/skrip kecil untuk reset
+  password dari server (bukan lewat web, supaya tidak jadi vektor baru).
+
+## Fitur
+- [ ] **Ekspor katalog (CSV/Excel)** dari Panel Admin, supaya data
+  harga/stok bisa diunduh tanpa akses langsung ke database.
+- [ ] **Index trigram (`pg_trgm`) otomatis** — README masih menyuruh admin
+  menjalankan `EXPLAIN ANALYZE` & bikin index manual untuk pencarian
+  `ILIKE`. Bisa ditambah tombol "Cek & buat index yang disarankan" di
+  Panel Admin -> Pengaturan Database (opsional, dengan konfirmasi).
+- [ ] **Tema gelap (dark mode)** — toggle sederhana pakai CSS variables
+  yang sudah ada di `style.css`.
+
+## Lain-lain
+- [ ] Review apakah `admin/backup.php` (ekspor/restore pengaturan) perlu
+  opsi backup terjadwal (mis. cron generate file ke `data/`), bukan cuma
+  manual lewat UI.
+
+---
+Catatan: kalau ada prioritas atau item lain yang mau ditambahkan/dicoret,
+tinggal update file ini langsung — file ini sekarang ikut ter-track di
+git (lihat `.gitignore`).
