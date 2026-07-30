@@ -15,7 +15,7 @@ Katalog Harga versi web untuk aplikasi POS iPos5 — pencarian item, harga & sto
 
 | Katalog publik | Panel Admin |
 |---|---|
-| ![Katalog publik](screenshots/katalog-publik.png) | ![Dashboard admin](screenshots/admin-dashboard.png) |
+| ![Katalog publik](docs/screenshots/katalog-publik.png) | ![Dashboard admin](docs/screenshots/admin-dashboard.png) |
 
 ## Peran pengguna
 | Peran | Login? | Akses |
