@@ -29,6 +29,16 @@ diurutkan dari yang menurut saya paling berdampak.
 - [ ] **Tema gelap (dark mode)** — toggle sederhana pakai CSS variables
   yang sudah ada di `style.css`.
 
+## Dokumentasi
+- [x] **Screenshot UI di README** — tambahkan tangkapan layar (katalog
+  publik, halaman detail, Panel Admin) di `README.md` supaya calon
+  pengguna langsung dapat gambaran tampilan sebelum instal.
+- [ ] **Panduan deploy ke shared hosting (non-Docker)** — README saat ini
+  fokus ke setup via Docker; perlu bagian terpisah untuk deploy manual
+  (upload lewat FTP/cPanel, persyaratan versi PHP, cara set
+  `config.php`, permission folder `data/`) buat pengguna yang tidak
+  punya akses Docker.
+
 ## Lain-lain
 - [ ] Review apakah `admin/backup.php` (ekspor/restore pengaturan) perlu
   opsi backup terjadwal (mis. cron generate file ke `data/`), bukan cuma

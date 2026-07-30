@@ -11,6 +11,12 @@ Katalog Harga versi web untuk aplikasi POS iPos5 — pencarian item, harga & sto
   selalu ambil data terbaru (tidak di-cache offline), cuma aset statis
   (CSS/font/ikon) yang di-cache untuk load lebih cepat.
 
+## Screenshot
+
+| Katalog publik | Panel Admin |
+|---|---|
+| ![Katalog publik](screenshots/katalog-publik.png) | ![Dashboard admin](screenshots/admin-dashboard.png) |
+
 ## Peran pengguna
 | Peran | Login? | Akses |
 |---|---|---|
