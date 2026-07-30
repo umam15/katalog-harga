@@ -165,9 +165,10 @@ $ajaxBaseQs = http_build_query($ajaxParams);
             <span class="brand-name">Katalog Harga</span>
         </a>
         <form method="GET" action="index.php" class="search-form" id="searchForm">
-            <input type="text" name="q" id="searchInput" class="search-box"
+            <input type="search" name="q" id="searchInput" class="search-box"
                    placeholder="Cari atau scan kode item…"
-                   value="<?= htmlspecialchars($search) ?>" autofocus autocomplete="off">
+                   value="<?= htmlspecialchars($search) ?>" autofocus autocomplete="off"
+                   enterkeyhint="search" inputmode="search">
         </form>
         <?php if ($loggedIn && !empty($kantorList)): ?>
         <form method="GET" action="index.php" class="kantor-form" id="kantorForm">
@@ -258,14 +259,40 @@ $ajaxBaseQs = http_build_query($ajaxParams);
 </main>
 
 <script>
-// Pencarian otomatis (debounced) tanpa perlu tekan Enter, tetap fallback ke submit form biasa.
+// Pencarian otomatis (debounced) tanpa perlu tekan Enter - HANYA di layar
+// desktop/tablet. Di mobile ini dimatikan: submit di sini artinya reload
+// halaman penuh (bukan cuma AJAX), dan kalau dipicu tiap kali jeda ngetik
+// di keyboard virtual, hasilnya reload berkali-kali yang terasa berat +
+// boros kuota. Di mobile pengguna cukup tekan Enter atau tombol cari
+// (form tetap submit normal seperti biasa, cuma auto-submitnya yang mati).
+// Breakpoint 720px sama dengan @media di style.css.
 const input = document.getElementById('searchInput');
 const form = document.getElementById('searchForm');
-let debounceTimer;
-input.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => form.submit(), 1450);
-});
+const isMobileViewport = window.matchMedia('(max-width: 720px)').matches;
+
+if (!isMobileViewport) {
+    let debounceTimer;
+    let lastQuery = input.value;
+    // 600ms: cukup singkat untuk terasa responsif setelah pengguna
+    // berhenti ngetik, tapi tetap ngasih jeda supaya tidak submit di
+    // tengah pengguna masih mengetik kata yang sama (dibanding 1450ms
+    // sebelumnya yang terasa lambat/telat).
+    const DEBOUNCE_MS = 600;
+
+    input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        const value = input.value;
+        if (value === lastQuery) return; // tidak ada perubahan nyata, skip
+        debounceTimer = setTimeout(() => {
+            lastQuery = value;
+            form.submit();
+        }, DEBOUNCE_MS);
+    });
+
+    // Kalau form disubmit manual (Enter / tombol cari), batalkan timer
+    // yang masih pending supaya tidak ada submit ganda / navigasi dobel.
+    form.addEventListener('submit', () => clearTimeout(debounceTimer));
+}
 
 // Infinite scroll: load-more-wrap sekarang satu-satunya navigasi (pagination
 // klasik sudah dihapus). Perlu JavaScript aktif untuk melihat item di luar
