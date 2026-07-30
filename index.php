@@ -167,7 +167,7 @@ $ajaxBaseQs = http_build_query($ajaxParams);
         <form method="GET" action="index.php" class="search-form" id="searchForm">
             <input type="search" name="q" id="searchInput" class="search-box"
                    placeholder="Cari atau scan kode item…"
-                   value="<?= htmlspecialchars($search) ?>" autofocus autocomplete="off"
+                   value="<?= htmlspecialchars($search) ?>" autocomplete="off"
                    enterkeyhint="search" inputmode="search">
         </form>
         <?php if ($loggedIn && !empty($kantorList)): ?>
