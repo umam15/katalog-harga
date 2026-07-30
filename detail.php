@@ -109,6 +109,9 @@ if (get_bulatkan_harga_detail()) {
     <link rel="stylesheet" href="fonts/fonts.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.ico">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1F3A5F">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
 <header class="topbar topbar-simple">
@@ -168,5 +171,16 @@ if (get_bulatkan_harga_detail()) {
         <?php endif; ?>
     </div>
 </main>
+<script>
+// Sama seperti di index.php: daftarkan service worker di sini juga, untuk
+// pengguna yang landing langsung ke halaman detail (mis. scan barcode/QR)
+// tanpa lewat index.php dulu. Registrasi idempotent - kalau SW sudah
+// terdaftar dari halaman lain, ini tidak mendaftar ulang dari nol.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.php').catch(() => {});
+    });
+}
+</script>
 </body>
 </html>

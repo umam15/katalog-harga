@@ -6,6 +6,10 @@ Katalog Harga versi web untuk aplikasi POS iPos5 — pencarian item, harga & sto
 - Pilih kantor/gudang aktif, harga & stok menyesuaikan otomatis.
 - Halaman detail per item: harga per satuan, barcode, dan stok.
 - Panel admin: koneksi database, akun pengguna, pengaturan tampilan katalog.
+- Bisa di-install sebagai app lewat browser (PWA) — "Add to Home Screen"
+  untuk akses satu tap tanpa address bar. Halaman katalog/detail tetap
+  selalu ambil data terbaru (tidak di-cache offline), cuma aset statis
+  (CSS/font/ikon) yang di-cache untuk load lebih cepat.
 
 ## Peran pengguna
 | Peran | Login? | Akses |

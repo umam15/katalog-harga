@@ -9,7 +9,7 @@ if (!defined('ROOT_PATH')) {
 }
 // Versi rilis aplikasi - ditampilkan di Panel Admin (Dashboard) dan
 // dicatat di CHANGELOG.md untuk tiap rilis.
-define('APP_VERSION', '1.2.8');
+define('APP_VERSION', '1.2.9');
 define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.db');
 define('IMG_CACHE_PATH', ROOT_PATH . '/data/img-cache');
 

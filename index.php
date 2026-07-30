@@ -156,6 +156,11 @@ $ajaxBaseQs = http_build_query($ajaxParams);
     <link rel="stylesheet" href="fonts/fonts.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.ico">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1F3A5F">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Katalog Harga">
 </head>
 <body>
 <header class="topbar">
@@ -292,6 +297,19 @@ if (!isMobileViewport) {
     // Kalau form disubmit manual (Enter / tombol cari), batalkan timer
     // yang masih pending supaya tidak ada submit ganda / navigasi dobel.
     form.addEventListener('submit', () => clearTimeout(debounceTimer));
+}
+
+// Daftarkan service worker supaya katalog bisa di-"Add to Home Screen" /
+// di-install sebagai app (PWA). SW ini SENGAJA cuma cache aset statis
+// (CSS/font/ikon) - lihat komentar di sw.php untuk alasannya (harga & stok
+// tidak boleh disajikan dari cache basi).
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.php').catch(() => {
+            // Gagal daftar SW (mis. browser lama) - abaikan saja, situs
+            // tetap berfungsi normal tanpa fitur install/offline.
+        });
+    });
 }
 
 // Infinite scroll: load-more-wrap sekarang satu-satunya navigasi (pagination
