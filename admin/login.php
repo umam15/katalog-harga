@@ -104,6 +104,10 @@ $csrf = csrf_token();
             <button type="submit" class="btn btn-primary"><?= $isSetup ? 'Buat Akun & Masuk' : 'Masuk' ?></button>
         </form>
     </div>
+
+    <p class="muted-text" style="margin-top:2rem; text-align:center; font-size:0.85rem;">
+        Katalog Harga v<?= htmlspecialchars(APP_VERSION) ?>
+    </p>
 </main>
 </body>
 </html>
