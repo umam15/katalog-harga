@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.2.9
+## [1.2.9]
 - **Bisa di-install sebagai app (PWA)**: tambah `manifest.json` + ikon
   (`icons/icon-192.png`, `icons/icon-512.png`, versi maskable) supaya
   katalog bisa di-"Add to Home Screen"/di-install lewat browser (ikon
@@ -18,13 +18,13 @@
   di `index.php` & `detail.php` (dua halaman yang bisa jadi entry point,
   termasuk landing langsung dari scan barcode/QR ke halaman detail).
 
-## v1.2.8
+## [1.2.8]
 - Tambah versi rilis di aplikasi: konstanta `APP_VERSION` (di
   `includes/functions.php`) sekarang ditampilkan di Panel Admin ->
   Dashboard, supaya versi yang berjalan di server bisa dicek langsung dari
   UI tanpa buka `CHANGELOG.md`.
 
-## v1.2.7
+## [1.2.7]
 - **Fallback tanpa JavaScript** untuk navigasi katalog: kalau JS nonaktif,
   tombol "Muat lebih banyak"/infinite scroll disembunyikan dan diganti link
   klasik Sebelumnya/Berikutnya (`<noscript>`) yang tetap bekerja lewat
@@ -40,7 +40,7 @@
 - Tambah `.gitignore` (baru) dan update `.dockerignore`: `TODO.md` (catatan
   kerja internal) tidak lagi ikut ke repo git maupun image Docker.
 
-## v1.2.6
+## [1.2.6]
 - **Pagination klasik dihapus** dari `index.php` — infinite scroll (tombol
   "Muat lebih banyak" + auto-load saat scroll) sekarang jadi satu-satunya
   cara melihat item di luar 50 pertama. Menyederhanakan halaman (HTML lebih
@@ -76,7 +76,7 @@
 - Dockerfile: tambah ekstensi `gd` (untuk thumbnail) dan aktifkan `opcache`
   dengan konfigurasi di `docker/opcache.ini`.
 
-## v1.2
+## [1.2]
 - Tambah dukungan Docker: `Dockerfile` & `docker-compose.yml` untuk menjalankan aplikasi via `docker compose up -d --build` (PHP 8.2 + Apache, ekstensi `pdo_pgsql` & `pdo_sqlite` sudah termasuk, folder `data/` dipersist lewat Docker volume).
 - Tambah panduan instalasi via Docker di README.
 - Perbaiki `Dockerfile`: hapus langkah purge `libpq-dev` setelah build, karena `apt-get purge --auto-remove` ikut menghapus `libpq5` (runtime lib untuk `pdo_pgsql`) dan menyebabkan error "could not find driver".
@@ -84,15 +84,18 @@
 - Perbaiki `admin/database.php`: field Host/Port/Nama Database/User di form Pengaturan Database default ke string kosong (bukan `null`) saat koneksi belum pernah disimpan, supaya tidak muncul warning deprecated `htmlspecialchars()`.
 - Ganti nama file penyimpanan pengaturan dari `data/settings.sqlite` menjadi `data/settings.db`.
 
-## v1.1.7
+## [1.1.7]
 - Tambah opsi **Backup & Restore** untuk admin (`admin/backup.php`): ekspor seluruh pengaturan aplikasi (termasuk kredensial database) ke file JSON, dan restore dari file tersebut. Akun login (admin/user) tidak termasuk di backup.
 
-## v1.1.6
+## [1.1.6]
 - Perbaiki `admin/display.php`: koneksi database yang belum di-setting atau gagal terhubung dulu menyebabkan fatal error, sekarang tampil pesan error yang mengarahkan ke Pengaturan Database.
 
-## v1.1.5
+## [1.1.5]
 - Tambah pengaturan pembulatan harga (ceil) di katalog, opsional diterapkan juga di halaman detail.
 
-## v1.1.1
+## [1.1.1]
 - Tambah pengaturan tampilan untuk admin (kantor default, tipe item, stok kosong).
 - Tambah peran pengguna **admin** dan **user**, selain **umum** (tanpa login).
+
+## [0.1.0] - 2026-01-21
+- Initial commit
