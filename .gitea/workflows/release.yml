@@ -1,0 +1,79 @@
+name: Auto Release from CHANGELOG
+
+# Jalan otomatis tiap kali CHANGELOG.md berubah di branch main,
+# atau bisa dipicu manual lewat tab Actions (workflow_dispatch).
+on:
+  push:
+    branches: [main]
+    paths:
+      - CHANGELOG.md
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: https://gitea.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ambil versi & isi rilis dari CHANGELOG.md
+        id: changelog
+        run: |
+          set -euo pipefail
+
+          if [ ! -f CHANGELOG.md ]; then
+            echo "CHANGELOG.md tidak ditemukan" >&2
+            exit 1
+          fi
+
+          # Ambil baris heading paling atas, contoh:
+          # "## [1.2.9]"  atau  "## [0.1.0] - 2026-07-21"
+          HEADER=$(grep -m1 '^## ' CHANGELOG.md)
+          VERSION=$(echo "$HEADER" | sed -E 's/^## +\[//; s/\].*//')
+
+          if [ -z "$VERSION" ]; then
+            echo "Gagal parse versi dari heading: $HEADER" >&2
+            exit 1
+          fi
+
+          echo "tag=v$VERSION" >> "$GITEA_OUTPUT"
+
+          # Ambil isi section pertama (dari heading atas sampai sebelum "## " berikutnya)
+          awk 'BEGIN{p=0} /^## /{ if(p==1){exit} p=1; next } p' CHANGELOG.md > /tmp/release_body.md
+
+          echo "== Tag yang akan dipakai: $VERSION =="
+          echo "== Isi release notes =="
+          cat /tmp/release_body.md
+
+      - name: Cek apakah tag sudah ada
+        id: check_tag
+        run: |
+          git fetch --tags
+          if git rev-parse "${{ steps.changelog.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITEA_OUTPUT"
+          else
+            echo "exists=false" >> "$GITEA_OUTPUT"
+          fi
+
+      - name: Buat & push tag
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          git config user.name "gitea-actions"
+          git config user.email "gitea-actions@noreply.local"
+          git tag -a "${{ steps.changelog.outputs.tag }}" -m "Release ${{ steps.changelog.outputs.tag }}"
+          git push origin "${{ steps.changelog.outputs.tag }}"
+
+      - name: Buat Gitea Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: https://gitea.com/actions/release-action@main
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          title: ${{ steps.changelog.outputs.tag }}
+          body_path: /tmp/release_body.md
+          api_key: '${{ secrets.RELEASE_TOKEN }}'
+
+      - name: Skip (tag sudah ada)
+        if: steps.check_tag.outputs.exists == 'true'
+        run: echo "Tag ${{ steps.changelog.outputs.tag }} sudah ada, tidak membuat release baru."
