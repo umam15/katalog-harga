@@ -170,10 +170,13 @@ $ajaxBaseQs = http_build_query($ajaxParams);
             <span class="brand-name">Katalog Harga</span>
         </a>
         <form method="GET" action="index.php" class="search-form" id="searchForm">
-            <input type="search" name="q" id="searchInput" class="search-box"
-                   placeholder="Cari atau scan kode item…"
-                   value="<?= htmlspecialchars($search) ?>" autocomplete="off"
-                   enterkeyhint="search" inputmode="search">
+            <div class="search-box-wrap">
+                <input type="search" name="q" id="searchInput" class="search-box"
+                       placeholder="Cari atau scan kode item…"
+                       value="<?= htmlspecialchars($search) ?>" autocomplete="off"
+                       enterkeyhint="search" inputmode="search">
+                <kbd class="search-shortcut-hint" id="searchShortcutHint" aria-hidden="true">/</kbd>
+            </div>
         </form>
         <?php if ($loggedIn && !empty($kantorList)): ?>
         <form method="GET" action="index.php" class="kantor-form" id="kantorForm">
@@ -298,6 +301,24 @@ if (!isMobileViewport) {
     // yang masih pending supaya tidak ada submit ganda / navigasi dobel.
     form.addEventListener('submit', () => clearTimeout(debounceTimer));
 }
+
+// Shortcut keyboard "/" untuk langsung fokus ke kolom pencarian, mirip
+// GitHub/Slack. Diabaikan kalau fokus sedang ada di form field lain
+// (input/textarea/select/contenteditable) supaya tidak mengganggu saat
+// pengguna mengetik karakter "/" di tempat lain, dan diabaikan juga kalau
+// ada modifier key (Ctrl/Alt/Meta) supaya tidak bentrok dengan shortcut
+// browser bawaan.
+document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.ctrlKey || e.altKey || e.metaKey) return;
+    const active = document.activeElement;
+    const tag = active ? active.tagName : '';
+    const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+        || (active && active.isContentEditable);
+    if (isEditable) return;
+    e.preventDefault();
+    input.focus();
+    input.select();
+});
 
 // Daftarkan service worker supaya katalog bisa di-"Add to Home Screen" /
 // di-install sebagai app (PWA). SW ini SENGAJA cuma cache aset statis

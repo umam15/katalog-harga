@@ -22,13 +22,20 @@ diurutkan dari yang menurut saya paling berdampak.
 ## Fitur
 - [ ] **Ekspor katalog (CSV/Excel)** dari Panel Admin, supaya data
   harga/stok bisa diunduh tanpa akses langsung ke database.
-- [ ] **Pencarian cepat `[/]`** — tambahkan shortcut keyboard `[/]` untuk langsung fokus ke kolom pencarian di katalog publik.
+- [x] **Pencarian cepat `[/]`** — tambahkan shortcut keyboard `[/]` untuk langsung fokus ke kolom pencarian di katalog publik.
 - [ ] **Index trigram (`pg_trgm`) otomatis** — README masih menyuruh admin
   menjalankan `EXPLAIN ANALYZE` & bikin index manual untuk pencarian
   `ILIKE`. Bisa ditambah tombol "Cek & buat index yang disarankan" di
   Panel Admin -> Pengaturan Database (opsional, dengan konfirmasi).
 - [ ] **Tema gelap (dark mode)** — toggle sederhana pakai CSS variables
   yang sudah ada di `style.css`.
+- [ ] **Scan barang lewat HP (kamera)** — tambahkan tombol "Scan" di
+  sebelah kolom pencarian pada katalog publik yang membuka kamera HP
+  (mis. pakai `getUserMedia` + library barcode/QR seperti ZXing atau
+  BarcodeDetector API bila didukung browser) untuk memindai barcode/QR
+  kode item, lalu otomatis isi kolom pencarian dengan kode hasil scan
+  dan submit. Perlu fallback yang jelas untuk browser yang tidak
+  mendukung API kamera.
 
 ## Dokumentasi
 - [x] **Screenshot UI di README** — tambahkan tangkapan layar (katalog
