@@ -22,6 +22,7 @@ diurutkan dari yang menurut saya paling berdampak.
 ## Fitur
 - [ ] **Ekspor katalog (CSV/Excel)** dari Panel Admin, supaya data
   harga/stok bisa diunduh tanpa akses langsung ke database.
+- [ ] **Pencarian cepat `[/]`** — tambahkan shortcut keyboard `[/]` untuk langsung fokus ke kolom pencarian di katalog publik.
 - [ ] **Index trigram (`pg_trgm`) otomatis** — README masih menyuruh admin
   menjalankan `EXPLAIN ANALYZE` & bikin index manual untuk pencarian
   `ILIKE`. Bisa ditambah tombol "Cek & buat index yang disarankan" di
