@@ -108,6 +108,39 @@ a { text-decoration: none; color: inherit; }
 }
 .search-box:focus::placeholder { color: var(--muted); }
 
+/* Wrapper + badge shortcut "/" (mirip GitHub/Slack) di dalam kolom
+   pencarian. Badge otomatis disembunyikan saat input fokus atau sudah
+   berisi teks, dan di layar sempit (di bawah 720px, sama dengan breakpoint
+   auto-submit di index.php) supaya tidak mengganggu keyboard virtual /
+   tombol clear bawaan input[type=search] di mobile. */
+.search-box-wrap { position: relative; }
+.search-box-wrap .search-box { padding-right: 34px; }
+.search-shortcut-hint {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    min-width: 18px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.75);
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+    pointer-events: none;
+}
+.search-box:focus ~ .search-shortcut-hint,
+.search-box:not(:placeholder-shown) ~ .search-shortcut-hint {
+    display: none;
+}
+@media (max-width: 720px) {
+    .search-shortcut-hint { display: none; }
+    .search-box-wrap .search-box { padding-right: 14px; }
+}
+
 .btn-back {
     display: inline-block;
     padding: 8px 4px;

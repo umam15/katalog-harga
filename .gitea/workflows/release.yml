@@ -1,79 +1,108 @@
-name: Auto Release from CHANGELOG
+name: Auto Release
 
-# Jalan otomatis tiap kali CHANGELOG.md berubah di branch main,
-# atau bisa dipicu manual lewat tab Actions (workflow_dispatch).
+# Gitea Actions membaca workflow dari .gitea/workflows/ (BUKAN .github/workflows/).
+# Jalan otomatis tiap kali CHANGELOG.md berubah di branch main.
+# Ganti "main" jika branch default repo kamu "master".
 on:
   push:
     branches: [main]
     paths:
       - CHANGELOG.md
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: https://gitea.com/actions/checkout@v4
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Ambil versi & isi rilis dari CHANGELOG.md
+      - name: Ambil versi & catatan rilis dari CHANGELOG.md
         id: changelog
+        shell: bash
         run: |
           set -euo pipefail
 
-          if [ ! -f CHANGELOG.md ]; then
-            echo "CHANGELOG.md tidak ditemukan" >&2
-            exit 1
-          fi
-
-          # Ambil baris heading paling atas, contoh:
-          # "## [1.2.9]"  atau  "## [0.1.0] - 2026-07-21"
-          HEADER=$(grep -m1 '^## ' CHANGELOG.md)
-          VERSION=$(echo "$HEADER" | sed -E 's/^## +\[//; s/\].*//')
-
+          VERSION=$(grep -m1 -oP '(?<=^## \[)[0-9]+\.[0-9]+\.[0-9]+(?=\])' CHANGELOG.md || true)
           if [ -z "$VERSION" ]; then
-            echo "Gagal parse versi dari heading: $HEADER" >&2
+            echo "::error::Tidak menemukan heading versi (## [x.y.z]) di CHANGELOG.md"
             exit 1
           fi
 
-          echo "tag=v$VERSION" >> "$GITEA_OUTPUT"
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
-          # Ambil isi section pertama (dari heading atas sampai sebelum "## " berikutnya)
-          awk 'BEGIN{p=0} /^## /{ if(p==1){exit} p=1; next } p' CHANGELOG.md > /tmp/release_body.md
+          # Ambil isi dari heading versi tsb sampai sebelum heading "## [" berikutnya,
+          # atau sebelum daftar link referensi "[versi]: url" di bagian bawah file.
+          awk -v ver="$VERSION" '
+            BEGIN { found = 0 }
+            /^## \[/ {
+              if (found == 1) exit
+              if ($0 ~ ("\\[" ver "\\]")) { found = 1; next }
+              next
+            }
+            /^\[[^]]+\]:/ { if (found == 1) exit }
+            found == 1 { print }
+          ' CHANGELOG.md > release_notes.md
 
-          echo "== Tag yang akan dipakai: $VERSION =="
-          echo "== Isi release notes =="
-          cat /tmp/release_body.md
+          # Buang baris kosong di awal/akhir
+          sed -i -e '/./,$!d' release_notes.md
+          tac release_notes.md | sed -e '/./,$!d' | tac > release_notes.tmp && mv release_notes.tmp release_notes.md
 
-      - name: Cek apakah tag sudah ada
-        id: check_tag
+          echo "----- release_notes.md -----"
+          cat release_notes.md
+
+      - name: Cek apakah release/tag sudah ada di Gitea
+        id: tagcheck
+        shell: bash
+        env:
+          GITEA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch --tags
-          if git rev-parse "${{ steps.changelog.outputs.tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITEA_OUTPUT"
+          set -euo pipefail
+          API="${{ github.api_url }}/repos/${{ github.repository }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${GITEA_TOKEN}" \
+            "${API}/releases/tags/${{ steps.changelog.outputs.tag }}")
+          if [ "$STATUS" = "200" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
           else
-            echo "exists=false" >> "$GITEA_OUTPUT"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Buat & push tag
-        if: steps.check_tag.outputs.exists == 'false'
+      - name: Buat tag & Release lewat Gitea API
+        if: steps.tagcheck.outputs.exists == 'false'
+        shell: bash
+        env:
+          GITEA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "gitea-actions"
-          git config user.email "gitea-actions@noreply.local"
-          git tag -a "${{ steps.changelog.outputs.tag }}" -m "Release ${{ steps.changelog.outputs.tag }}"
-          git push origin "${{ steps.changelog.outputs.tag }}"
+          set -euo pipefail
+          API="${{ github.api_url }}/repos/${{ github.repository }}"
+          BODY_JSON=$(jq -Rs . < release_notes.md)
 
-      - name: Buat Gitea Release
-        if: steps.check_tag.outputs.exists == 'false'
-        uses: https://gitea.com/actions/release-action@main
-        with:
-          tag_name: ${{ steps.changelog.outputs.tag }}
-          title: ${{ steps.changelog.outputs.tag }}
-          body_path: /tmp/release_body.md
-          api_key: '${{ secrets.RELEASE_TOKEN }}'
+          HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Authorization: token ${GITEA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${API}/releases" \
+            -d "{
+              \"tag_name\": \"${{ steps.changelog.outputs.tag }}\",
+              \"name\": \"${{ steps.changelog.outputs.tag }}\",
+              \"body\": ${BODY_JSON},
+              \"target_commitish\": \"${{ github.sha }}\",
+              \"draft\": false,
+              \"prerelease\": false
+            }")
 
-      - name: Skip (tag sudah ada)
-        if: steps.check_tag.outputs.exists == 'true'
-        run: echo "Tag ${{ steps.changelog.outputs.tag }} sudah ada, tidak membuat release baru."
+          cat response.json
+          if [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Gagal membuat release, HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "Release ${{ steps.changelog.outputs.tag }} berhasil dibuat."
+
+      - name: Info kalau tag/release sudah ada
+        if: steps.tagcheck.outputs.exists == 'true'
+        shell: bash
+        run: echo "Release ${{ steps.changelog.outputs.tag }} sudah ada, dilewati."
