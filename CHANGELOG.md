@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3.0]
+
+### Added
+- **Pencarian cepat `[/]`** di katalog publik (`index.php`): tekan `/` di
+  mana saja pada halaman untuk langsung fokus + select ke kolom
+  pencarian, mirip shortcut di GitHub/Slack. Diabaikan otomatis kalau
+  fokus sedang ada di input/textarea/select/elemen contenteditable lain,
+  atau ada modifier key (Ctrl/Alt/Meta) yang ditekan bareng, supaya tidak
+  bentrok dengan pengetikan normal atau shortcut browser.
+- Badge kecil `[/]` di ujung kanan kolom pencarian sebagai petunjuk
+  visual shortcut di atas, otomatis hilang saat kolom fokus/sudah berisi
+  teks, dan disembunyikan di layar mobile (<720px) supaya tidak
+  mengganggu tombol clear bawaan `input[type=search]` maupun keyboard
+  virtual.
+
+### Changed
+- `APP_VERSION` dinaikkan ke `1.3.0` supaya cache aset statis service
+  worker (termasuk `style.css` yang berisi styling badge shortcut di
+  atas) ikut ter-invalidate untuk pengguna yang sudah install PWA-nya -
+  lihat catatan strategi cache di `sw.php`.
+
 ## [1.2.9]
 
 ### Added
