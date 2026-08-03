@@ -1,16 +1,16 @@
-name: Auto Release from CHANGELOG
+name: Auto Release
 
-# Jalan otomatis tiap kali CHANGELOG.md berubah di branch main,
-# atau bisa dipicu manual lewat tab Actions (workflow_dispatch).
+# Jalan otomatis tiap kali CHANGELOG.md berubah di branch main.
+# Bisa juga dipicu manual lewat tab "Actions" -> "Auto Release" -> "Run workflow".
 on:
   push:
     branches: [main]
     paths:
       - CHANGELOG.md
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write   # perlu untuk push tag baru + membuat release
 
 jobs:
   release:
@@ -19,65 +19,66 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0     # ambil semua history + tag, biar bisa dicek tag mana yang sudah ada
+          fetch-tags: true
 
-      - name: Ambil versi & isi rilis dari CHANGELOG.md
+      - name: Ambil versi & catatan rilis dari CHANGELOG.md
         id: changelog
+        shell: bash
         run: |
           set -euo pipefail
 
-          if [ ! -f CHANGELOG.md ]; then
-            echo "CHANGELOG.md tidak ditemukan" >&2
-            exit 1
-          fi
-
-          # Ambil baris heading paling atas, contoh:
-          # "## [1.2.9]"  atau  "## [0.1.0] - 2026-07-21"
-          HEADER=$(grep -m1 '^## ' CHANGELOG.md)
-          VERSION=$(echo "$HEADER" | sed -E 's/^## +\[//; s/\].*//')
+          # Ambil nomor versi dari heading paling atas, format: "## [1.2.5]" (boleh ada tanggal setelahnya)
+          VERSION=$(grep -m1 -oP '(?<=^## \[)[0-9]+\.[0-9]+\.[0-9]+(?=\])' CHANGELOG.md || true)
 
           if [ -z "$VERSION" ]; then
-            echo "Gagal parse versi dari heading: $HEADER" >&2
+            echo "::error::Tidak menemukan heading versi (## [x.y.z]) di CHANGELOG.md"
             exit 1
           fi
 
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
-          # Ambil isi section pertama (dari heading atas sampai sebelum "## " berikutnya)
-          awk 'BEGIN{p=0} /^## /{ if(p==1){exit} p=1; next } p' CHANGELOG.md > /tmp/release_body.md
+          # Ambil isi dari heading versi tsb sampai sebelum heading "## [" berikutnya,
+          # atau sebelum daftar link referensi "[versi]: url" di bagian bawah file.
+          awk -v ver="$VERSION" '
+            BEGIN { found = 0 }
+            /^## \[/ {
+              if (found == 1) exit
+              if ($0 ~ ("\\[" ver "\\]")) { found = 1; next }
+              next
+            }
+            /^\[[^]]+\]:/ { if (found == 1) exit }
+            found == 1 { print }
+          ' CHANGELOG.md > release_notes.md
 
-          echo "== Tag yang akan dipakai: $VERSION =="
-          echo "== Isi release notes =="
-          cat /tmp/release_body.md
+          # Buang baris kosong di awal/akhir file catatan rilis
+          sed -i -e '/./,$!d' release_notes.md
+          tac release_notes.md | sed -e '/./,$!d' | tac > release_notes.tmp && mv release_notes.tmp release_notes.md
 
-      - name: Cek apakah tag sudah ada
-        id: check_tag
+          echo "----- release_notes.md -----"
+          cat release_notes.md
+
+      - name: Cek apakah tag sudah pernah dibuat
+        id: tagcheck
+        shell: bash
         run: |
-          git fetch --tags
           if git rev-parse "${{ steps.changelog.outputs.tag }}" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Buat & push tag
-        if: steps.check_tag.outputs.exists == 'false'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.changelog.outputs.tag }}" -m "Release ${{ steps.changelog.outputs.tag }}"
-          git push origin "${{ steps.changelog.outputs.tag }}"
-
-      - name: Buat GitHub Release
-        if: steps.check_tag.outputs.exists == 'false'
+      - name: Buat tag & GitHub Release
+        if: steps.tagcheck.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.changelog.outputs.tag }}
-          name: ${{ steps.changelog.outputs.tag }}
-          body_path: /tmp/release_body.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: "${{ steps.changelog.outputs.tag }}"
+          body_path: release_notes.md
+          target_commitish: ${{ github.sha }}
 
-      - name: Skip (tag sudah ada)
-        if: steps.check_tag.outputs.exists == 'true'
-        run: echo "Tag ${{ steps.changelog.outputs.tag }} sudah ada, tidak membuat release baru."
+      - name: Info kalau tag sudah ada (tidak dibuat ulang)
+        if: steps.tagcheck.outputs.exists == 'true'
+        run: echo "Tag ${{ steps.changelog.outputs.tag }} sudah ada, dilewati."
