@@ -166,6 +166,7 @@
 - Peran pengguna **admin** dan **user**, selain **umum** (tanpa login).
 
 ## [0.1.0] - 2026-03-03
+<<<<<<< HEAD
 - Initial commit
 
 [Unreleased]: #
@@ -179,3 +180,6 @@
 [1.1.6]: #
 [1.1.5]: #
 [1.1.1]: #
+=======
+- Initial commit
+>>>>>>> 89d1ef4ff92678fb801ba02d0aeea2220d65c026
