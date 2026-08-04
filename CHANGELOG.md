@@ -166,5 +166,4 @@
 - Peran pengguna **admin** dan **user**, selain **umum** (tanpa login).
 
 ## [0.1.0] - 2026-01-21
-
 - Initial commit
