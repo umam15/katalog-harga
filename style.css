@@ -108,17 +108,39 @@ a { text-decoration: none; color: inherit; }
 }
 .search-box:focus::placeholder { color: var(--muted); }
 
-/* Wrapper + badge shortcut "/" (mirip GitHub/Slack) di dalam kolom
-   pencarian. Badge otomatis disembunyikan saat input fokus atau sudah
-   berisi teks, dan di layar sempit (di bawah 720px, sama dengan breakpoint
-   auto-submit di index.php) supaya tidak mengganggu keyboard virtual /
-   tombol clear bawaan input[type=search] di mobile. */
+/* Wrapper + badge shortcut "/" (mirip GitHub/Slack) + tombol scan di
+   dalam kolom pencarian. Badge "/" otomatis disembunyikan saat input
+   fokus atau sudah berisi teks, dan di layar sempit (di bawah 720px,
+   sama dengan breakpoint auto-submit di index.php) supaya tidak
+   mengganggu keyboard virtual / tombol clear bawaan input[type=search]
+   di mobile. Tombol scan tetap tampil di semua ukuran layar. */
 .search-box-wrap { position: relative; }
-.search-box-wrap .search-box { padding-right: 34px; }
+.search-box-wrap .search-box { padding-right: 78px; }
+.scan-btn {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+}
+.scan-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
+.scan-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.scan-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.search-box:focus ~ .scan-btn { color: var(--primary); }
 .search-shortcut-hint {
     position: absolute;
     top: 50%;
-    right: 10px;
+    right: 46px;
     transform: translateY(-50%);
     min-width: 18px;
     padding: 2px 6px;
@@ -138,7 +160,7 @@ a { text-decoration: none; color: inherit; }
 }
 @media (max-width: 720px) {
     .search-shortcut-hint { display: none; }
-    .search-box-wrap .search-box { padding-right: 14px; }
+    .search-box-wrap .search-box { padding-right: 48px; }
 }
 
 .btn-back {
@@ -441,3 +463,116 @@ a.catalog-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 
     .barcode-txt { grid-area: barcode; }
     .info-txt { grid-area: info; }
 }
+
+/* ---------- Scanner barcode/QR (kamera) ---------- */
+body.scan-open { overflow: hidden; }
+
+.scan-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(10,14,18,0.72);
+    backdrop-filter: blur(2px);
+}
+.scan-modal[hidden] { display: none; }
+
+.scan-modal-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.scan-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+}
+.scan-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+}
+.scan-close {
+    border: none;
+    background: none;
+    padding: 2px 6px;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+}
+.scan-close:hover { color: var(--ink); }
+
+.scan-stage {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: #111;
+    overflow: hidden;
+}
+.scan-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.scan-frame {
+    position: absolute;
+    inset: 12% 16%;
+    border: 2px solid rgba(255,255,255,0.85);
+    border-radius: 14px;
+    box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);
+    pointer-events: none;
+}
+
+.scan-status {
+    margin: 0;
+    padding: 12px 16px 0;
+    font-size: 13px;
+    color: var(--ink);
+    min-height: 1.2em;
+}
+.scan-help {
+    margin: 0;
+    padding: 6px 16px 0;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+.scan-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+}
+.btn-scan-retry,
+.btn-scan-cancel {
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-scan-retry {
+    background: var(--primary);
+    color: #fff;
+    border: 1px solid var(--primary);
+}
+.btn-scan-cancel {
+    margin-left: auto;
+    background: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--border);
+}
+.btn-scan-cancel:hover { background: var(--bg); }

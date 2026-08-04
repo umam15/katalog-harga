@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.0] - 2026-08-04
+
+### Added
+- **Scan barcode/QR lewat kamera** di katalog publik (`index.php`): tombol
+  "Scan" (ikon kamera) di ujung kanan kolom pencarian membuka kamera HP
+  (utamanya kamera belakang via `facingMode: environment`) untuk memindai
+  barcode/QR kode item; hasil scan otomatis mengisi kolom pencarian dan
+  men-submit pencarian. Deteksi pakai API `BarcodeDetector` bawaan browser
+  bila tersedia (Chrome/Edge), dan fallback ke library **ZXing** yang
+  diunduh dinamis dari CDN hanya saat tombol ditekan (bukan saat halaman
+  dimuat) untuk Firefox/Safari/browser lama. Kalau kamera tidak bisa
+  diakses (tidak didukung, izin ditolak, atau tidak ada kamera), tampil
+  pesan yang jelas + tombol "Coba lagi"; tombol Scan ikut dinonaktifkan
+  otomatis di browser yang tidak mendukung `getUserMedia`/secure context.
+
+### Changed
+- `APP_VERSION` dinaikkan ke `1.4.0` supaya cache aset statis service
+  worker (termasuk `style.css` yang berisi styling tombol scan & modal)
+  ikut ter-invalidate untuk pengguna yang sudah install PWA-nya - lihat
+  catatan strategi cache di `sw.php`.
+
 ## [1.3.0] - 2026-08-03
 
 ### Added

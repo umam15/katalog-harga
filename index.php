@@ -175,6 +175,16 @@ $ajaxBaseQs = http_build_query($ajaxParams);
                        placeholder="Cari atau scan kode item…"
                        value="<?= htmlspecialchars($search) ?>" autocomplete="off"
                        enterkeyhint="search" inputmode="search">
+                <button type="button" id="scanBtn" class="scan-btn"
+                        title="Scan kode item dengan kamera"
+                        aria-label="Scan kode item dengan kamera">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </button>
                 <kbd class="search-shortcut-hint" id="searchShortcutHint" aria-hidden="true">/</kbd>
             </div>
         </form>
@@ -266,6 +276,25 @@ $ajaxBaseQs = http_build_query($ajaxParams);
     <?php endif; ?>
 </main>
 
+<div id="scanModal" class="scan-modal" hidden>
+    <div class="scan-modal-card" role="dialog" aria-modal="true" aria-labelledby="scanTitle">
+        <div class="scan-modal-head">
+            <h2 id="scanTitle" class="scan-title">Scan kode item</h2>
+            <button type="button" id="scanCloseBtn" class="scan-close" aria-label="Tutup">&times;</button>
+        </div>
+        <div class="scan-stage">
+            <video id="scanVideo" class="scan-video" autoplay playsinline muted></video>
+            <div class="scan-frame" aria-hidden="true"></div>
+        </div>
+        <p id="scanStatus" class="scan-status" role="status" aria-live="polite"></p>
+        <p class="scan-help">Arahkan kamera ke barcode/QR kode item hingga terdeteksi.</p>
+        <div class="scan-actions">
+            <button type="button" id="scanRetryBtn" class="btn-scan-retry" hidden>Coba lagi</button>
+            <button type="button" id="scanCancelBtn" class="btn-scan-cancel">Batal</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // Pencarian otomatis (debounced) tanpa perlu tekan Enter - HANYA di layar
 // desktop/tablet. Di mobile ini dimatikan: submit di sini artinya reload
@@ -318,6 +347,194 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     input.focus();
     input.select();
+});
+
+// Scanner barcode/QR lewat kamera (utamanya untuk HP). Tombol "Scan" ada
+// di ujung kanan kolom pencarian. Logika:
+// - Pakai API BarcodeDetector bawaan browser kalau tersedia (Chrome/Edge).
+// - Kalau tidak (Firefox/Safari/HP lama), fallback ke library ZXing yang
+//   dimuat dinamis dari CDN. ZXing HANYA diunduh saat tombol scan ditekan
+//   & browser tidak punya BarcodeDetector - tidak membebani halaman normal.
+// - Kalau kamera tidak bisa diakses (tidak didukung / izin ditolak / tidak
+//   ada kamera), tampilkan pesan yang jelas + tombol "Coba lagi".
+const scanBtn = document.getElementById('scanBtn');
+const scanModal = document.getElementById('scanModal');
+const scanVideo = document.getElementById('scanVideo');
+const scanStatus = document.getElementById('scanStatus');
+const scanRetryBtn = document.getElementById('scanRetryBtn');
+const scanCloseBtn = document.getElementById('scanCloseBtn');
+const scanCancelBtn = document.getElementById('scanCancelBtn');
+
+const cameraSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+const detectorSupported = !!(window.BarcodeDetector);
+// getUserMedia cuma tersedia di secure context (HTTPS/localhost). Kalau
+// tidak, tombol scan dinonaktifkan biar tidak bingung pengguna.
+if (!cameraSupported || !window.isSecureContext) {
+    scanBtn.disabled = true;
+    scanBtn.title = 'Kamera tidak didukung di browser/perangkat ini';
+}
+
+const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+
+let scanStream = null;
+let scanLoopId = null;
+let nativeDetector = null;
+let zxingReader = null;
+let scanning = false;
+
+function loadZxingLib() {
+    return new Promise((resolve, reject) => {
+        if (window.ZXing) return resolve(window.ZXing);
+        const s = document.createElement('script');
+        s.src = ZXING_URL;
+        s.async = true;
+        s.onload = () => window.ZXing ? resolve(window.ZXing) : reject(new Error('Library pemindai gagal dimuat.'));
+        s.onerror = () => reject(new Error('Gagal mengunduh library pemindai - periksa koneksi internet.'));
+        document.head.appendChild(s);
+    });
+}
+
+// Ambil akses kamera: utamakan kamera belakang (facingMode environment);
+// kalau constraint itu tidak didukung (mis. webcam desktop), coba tanpa
+// constraint sama sekali.
+async function startCameraStream() {
+    try {
+        return await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false
+        });
+    } catch (err) {
+        if (err && err.name === 'OverconstrainedError') {
+            return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+        throw err;
+    }
+}
+
+function handleScanError(err) {
+    if (!scanning) return;
+    if (err && err.name === 'NotAllowedError') {
+        scanStatus.textContent = 'Izin kamera ditolak. Izinkan akses kamera untuk peramban ini, lalu coba lagi.';
+    } else if (err && err.name === 'NotFoundError') {
+        scanStatus.textContent = 'Tidak ada kamera yang terdeteksi di perangkat ini.';
+    } else if (err && err.name === 'NotReadableError') {
+        scanStatus.textContent = 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi itu lalu coba lagi.';
+    } else {
+        scanStatus.textContent = 'Gagal mengakses kamera: ' + (err.message || 'kesalahan tidak dikenal');
+    }
+    scanRetryBtn.hidden = false;
+}
+
+function startNativeScan() {
+    nativeDetector = new window.BarcodeDetector();
+    scanStatus.textContent = 'Mendeteksi…';
+    const tick = () => {
+        if (!scanning) return;
+        nativeDetector.detect(scanVideo).then((codes) => {
+            if (!scanning) return;
+            if (codes.length > 0 && codes[0].rawValue) {
+                const code = codes[0].rawValue;
+                stopScanner();
+                onScanned(code);
+                return;
+            }
+            scanLoopId = requestAnimationFrame(tick);
+        }).catch(() => {
+            scanLoopId = requestAnimationFrame(tick);
+        });
+    };
+    tick();
+}
+
+async function startZxingScan() {
+    scanStatus.textContent = 'Memuat pemindai…';
+    try {
+        const ZXing = await loadZxingLib();
+        if (!scanning) return;
+        zxingReader = new ZXing.BrowserMultiFormatReader();
+        scanStatus.textContent = 'Mendeteksi…';
+        zxingReader.decodeFromStream(scanStream, scanVideo, (result) => {
+            if (!scanning || !result) return;
+            const code = result.getText();
+            if (code) {
+                stopScanner();
+                onScanned(code);
+            }
+        });
+    } catch (err) {
+        handleScanError(err);
+    }
+}
+
+async function startCamera() {
+    scanStatus.textContent = '';
+    scanRetryBtn.hidden = true;
+    try {
+        scanStream = await startCameraStream();
+        if (!scanning) {
+            // Modal ditutup saat menunggu izin kamera - lepas stream agar
+            // kamera tidak menyala diam-diam di belakang halaman.
+            scanStream.getTracks().forEach((t) => t.stop());
+            scanStream = null;
+            return;
+        }
+        scanVideo.srcObject = scanStream;
+        await scanVideo.play();
+        if (detectorSupported) startNativeScan();
+        else startZxingScan();
+    } catch (err) {
+        if (scanning) handleScanError(err);
+    }
+}
+
+function stopScanner() {
+    scanning = false;
+    if (scanLoopId) { cancelAnimationFrame(scanLoopId); scanLoopId = null; }
+    nativeDetector = null;
+    if (zxingReader) { try { zxingReader.reset(); } catch (e) { /* abaikan */ } zxingReader = null; }
+    if (scanStream) {
+        scanStream.getTracks().forEach((t) => t.stop());
+        scanStream = null;
+    }
+    if (scanVideo.srcObject) { scanVideo.srcObject = null; }
+}
+
+function openScanner() {
+    scanModal.hidden = false;
+    document.body.classList.add('scan-open');
+    scanCloseBtn.focus();
+    scanning = true;
+    startCamera();
+}
+
+function closeScanner() {
+    stopScanner();
+    scanModal.hidden = true;
+    document.body.classList.remove('scan-open');
+    scanBtn.focus();
+}
+
+function onScanned(code) {
+    closeScanner();
+    input.value = code;
+    form.submit();
+}
+
+scanBtn.addEventListener('click', openScanner);
+scanCloseBtn.addEventListener('click', closeScanner);
+scanCancelBtn.addEventListener('click', closeScanner);
+scanRetryBtn.addEventListener('click', () => {
+    stopScanner();
+    scanning = true;
+    startCamera();
+});
+// Klik di luar kartu (di area gelap) = tutup.
+scanModal.addEventListener('click', (e) => {
+    if (e.target === scanModal) closeScanner();
+});
+// Tombol Esc menutup scanner.
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !scanModal.hidden) closeScanner();
 });
 
 // Daftarkan service worker supaya katalog bisa di-"Add to Home Screen" /

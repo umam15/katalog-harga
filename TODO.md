@@ -29,13 +29,14 @@ diurutkan dari yang menurut saya paling berdampak.
   Panel Admin -> Pengaturan Database (opsional, dengan konfirmasi).
 - [ ] **Tema gelap (dark mode)** — toggle sederhana pakai CSS variables
   yang sudah ada di `style.css`.
-- [ ] **Scan barang lewat HP (kamera)** — tambahkan tombol "Scan" di
+- [x] **Scan barang lewat HP (kamera)** — tambahkan tombol "Scan" di
   sebelah kolom pencarian pada katalog publik yang membuka kamera HP
-  (mis. pakai `getUserMedia` + library barcode/QR seperti ZXing atau
-  BarcodeDetector API bila didukung browser) untuk memindai barcode/QR
-  kode item, lalu otomatis isi kolom pencarian dengan kode hasil scan
-  dan submit. Perlu fallback yang jelas untuk browser yang tidak
-  mendukung API kamera.
+  (pakai `getUserMedia` + `BarcodeDetector` API bila didukung browser,
+  fallback ke library ZXing dari CDN untuk Firefox/Safari/browser lama)
+  untuk memindai barcode/QR kode item, lalu otomatis isi kolom pencarian
+  dengan kode hasil scan dan submit. Browser yang tidak mendukung kamera
+  mendapat pesan error yang jelas + tombol "Coba lagi" (tombol Scan juga
+  dinonaktifkan otomatis kalau `getUserMedia` tidak tersedia).
 
 ## Dokumentasi
 - [x] **Screenshot UI di README** — tambahkan tangkapan layar (katalog
