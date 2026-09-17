@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.0] - 2026-09-17
+
+### Added
+- **`GET /api/v1/health`** — endpoint monitoring/uptime, sengaja tanpa
+  autentikasi dan tidak tunduk toggle "Aktifkan API" (soal status
+  infrastruktur, bukan bagian fitur katalog-nya). Balas `200` status `ok`
+  kalau database bisa disambung, `503` status `degraded` kalau tidak -
+  tidak pernah membocorkan detail error atau data katalog.
+
 ## [1.8.0] - 2026-09-17
 
 ### Added
