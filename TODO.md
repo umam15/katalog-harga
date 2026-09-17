@@ -39,8 +39,9 @@ diurutkan dari yang menurut saya paling berdampak.
 ## API (akses read-only, dirancang untuk LLM/agent)
 Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
 butuh fondasi tahap sebelumnya):
-- [x] **`docs/api.md`** — contoh request `curl` per endpoint + catatan
-  skema, biar dokumentasi teknis lengkap tidak numpuk di README.
+- [x] **Rate limit per API key** — token bucket sederhana, counter di
+  `settings.db` (tanpa Redis), untuk cegah scraping berlebihan/DoS ke
+  PostgreSQL.
 - [ ] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif
   sesuai scope key.
 - [ ] **Endpoint `GET /api/v1/health`** — tanpa auth, khusus cek

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.11.0] - 2026-09-17
+
+### Added
+- **Rate limit per API key** — token bucket sederhana (tabel
+  `api_rate_limit` di `settings.db`, tanpa Redis/cron): burst 30 request,
+  terisi ulang 0.5 request/detik (30/menit sustained). Kena limit dibalas
+  `429 rate_limited` + header `Retry-After`. Terintegrasi otomatis di
+  `api_authenticate()`, berlaku untuk semua endpoint kecuali `/health`.
+  Baris rate limit ikut terhapus saat API key-nya dihapus.
+- `docs/api.md` dan `openapi.json` diupdate mencantumkan `429`.
+
 ## [1.10.1] - 2026-09-17
 
 ### Added

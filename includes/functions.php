@@ -154,6 +154,15 @@ function get_settings_pdo(): PDO {
         last_used_at  TEXT
     )');
 
+    // Token bucket rate limit per API key - satu baris per key, di-refill
+    // berdasarkan selisih waktu tiap request (bukan cron/job terpisah).
+    // Lihat api_check_rate_limit().
+    $pdo->exec('CREATE TABLE IF NOT EXISTS api_rate_limit (
+        api_key_id  INTEGER PRIMARY KEY,
+        tokens      REAL NOT NULL,
+        updated_at  REAL NOT NULL
+    )');
+
     // Migrasi untuk instalasi lama (v1.1.0 ke bawah) yang tabelnya belum
     // punya kolom role.
     $hasRoleColumn = false;
@@ -430,8 +439,9 @@ function list_api_keys(): array {
  * bukan dengan menyisakan baris key yang sudah mati di tabel ini.
  */
 function delete_api_key(int $id): void {
-    $stmt = get_settings_pdo()->prepare('DELETE FROM api_keys WHERE id = ?');
-    $stmt->execute([$id]);
+    $pdo = get_settings_pdo();
+    $pdo->prepare('DELETE FROM api_keys WHERE id = ?')->execute([$id]);
+    $pdo->prepare('DELETE FROM api_rate_limit WHERE api_key_id = ?')->execute([$id]);
 }
 
 /**
@@ -477,10 +487,13 @@ function api_bearer_token(): ?string {
     return $m[1];
 }
 
-/** Kirim respons JSON error API standar lalu hentikan eksekusi. */
-function api_error(int $status, string $code, string $message): void {
+/** Kirim respons JSON error API standar lalu hentikan eksekusi. $headers: header tambahan (mis. Retry-After). */
+function api_error(int $status, string $code, string $message, array $headers = []): void {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
+    foreach ($headers as $name => $value) {
+        header("$name: $value");
+    }
     echo json_encode(['error' => ['code' => $code, 'message' => $message]], JSON_UNESCAPED_SLASHES);
     exit;
 }
@@ -493,11 +506,53 @@ function api_json(array $data, int $status = 200): void {
     exit;
 }
 
+// Token bucket rate limit per API key: burst maksimal API_RATE_LIMIT_CAPACITY
+// request, terisi ulang API_RATE_LIMIT_REFILL_PER_SEC token/detik (0.5/detik
+// = 30 request/menit sustained). Sengaja hardcoded (bukan pengaturan admin) -
+// cukup untuk cegah scraping/DoS tanpa nambah kompleksitas UI; bisa diubah di
+// sini kalau ternyata perlu berbeda.
+const API_RATE_LIMIT_CAPACITY = 30;
+const API_RATE_LIMIT_REFILL_PER_SEC = 0.5;
+
+/**
+ * Cek & konsumsi satu token dari rate limit API key. Tidak butuh cron/job
+ * terpisah - token diisi ulang berdasarkan selisih waktu sejak request
+ * terakhir, dihitung tiap kali fungsi ini dipanggil.
+ * Return null kalau boleh lanjut (token sudah terpakai), atau jumlah detik
+ * yang harus ditunggu kalau sedang kena limit.
+ */
+function api_check_rate_limit(int $apiKeyId): ?int {
+    $pdo = get_settings_pdo();
+    $now = microtime(true);
+
+    $stmt = $pdo->prepare('SELECT tokens, updated_at FROM api_rate_limit WHERE api_key_id = ?');
+    $stmt->execute([$apiKeyId]);
+    $row = $stmt->fetch();
+
+    if ($row) {
+        $elapsed = max(0.0, $now - (float) $row['updated_at']);
+        $tokens = min(API_RATE_LIMIT_CAPACITY, (float) $row['tokens'] + $elapsed * API_RATE_LIMIT_REFILL_PER_SEC);
+    } else {
+        $tokens = (float) API_RATE_LIMIT_CAPACITY;
+    }
+
+    $allowed = $tokens >= 1.0;
+    $tokens = $allowed ? $tokens - 1.0 : $tokens;
+
+    $pdo->prepare(
+        'INSERT INTO api_rate_limit (api_key_id, tokens, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(api_key_id) DO UPDATE SET tokens = excluded.tokens, updated_at = excluded.updated_at'
+    )->execute([$apiKeyId, $tokens, $now]);
+
+    if ($allowed) return null;
+    return (int) ceil((1.0 - $tokens) / API_RATE_LIMIT_REFILL_PER_SEC);
+}
+
 /**
  * Pemeriksaan wajib di awal tiap endpoint /api/v1/* (kecuali /health, yang
- * sengaja tanpa auth): API harus aktif & key harus valid. Kalau gagal,
- * langsung kirim error JSON & exit - pemanggil selalu menerima array key
- * yang valid kalau fungsi ini return.
+ * sengaja tanpa auth): API harus aktif, key harus valid, & belum kena rate
+ * limit. Kalau gagal, langsung kirim error JSON & exit - pemanggil selalu
+ * menerima array key yang valid kalau fungsi ini return.
  * API dinonaktifkan/endpoint tidak ada sengaja dibalas 404 yang sama (bukan
  * 403), supaya tidak membocorkan informasi soal ada/tidaknya API ke pihak
  * yang belum diautentikasi.
@@ -513,6 +568,10 @@ function api_authenticate(): array {
     $apiKey = find_active_api_key($token);
     if ($apiKey === null) {
         api_error(401, 'unauthorized', 'API key tidak valid.');
+    }
+    $retryAfter = api_check_rate_limit($apiKey['id']);
+    if ($retryAfter !== null) {
+        api_error(429, 'rate_limited', 'Terlalu banyak request, coba lagi sebentar lagi.', ['Retry-After' => (string) $retryAfter]);
     }
     return $apiKey;
 }

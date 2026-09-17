@@ -56,6 +56,7 @@ $spec = [
                     '400' => $errorResponse('Parameter tidak valid (mis. kantor wajib diisi / kantor tidak ditemukan).'),
                     '401' => $errorResponse('API key tidak ada/tidak valid.'),
                     '403' => $errorResponse('API key tidak punya akses ke kantor yang diminta.'),
+                    '429' => $errorResponse('Terlalu banyak request (rate limit terlampaui).'),
                     '503' => $errorResponse('Database katalog sedang tidak bisa diakses.'),
                 ],
             ],
@@ -74,6 +75,7 @@ $spec = [
                     '401' => $errorResponse('API key tidak ada/tidak valid.'),
                     '403' => $errorResponse('API key tidak punya akses ke kantor yang diminta.'),
                     '404' => $errorResponse('Item tidak ditemukan di kantor tersebut.'),
+                    '429' => $errorResponse('Terlalu banyak request (rate limit terlampaui).'),
                     '503' => $errorResponse('Database katalog sedang tidak bisa diakses.'),
                 ],
             ],
@@ -84,6 +86,7 @@ $spec = [
                 'responses' => [
                     '200' => ['description' => 'Daftar kantor.', 'content' => ['application/json' => ['schema' => ['type' => 'object', 'properties' => ['kantor' => ['type' => 'array', 'items' => ['type' => 'string']]]]]]],
                     '401' => $errorResponse('API key tidak ada/tidak valid.'),
+                    '429' => $errorResponse('Terlalu banyak request (rate limit terlampaui).'),
                     '503' => $errorResponse('Database katalog sedang tidak bisa diakses.'),
                 ],
             ],

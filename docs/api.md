@@ -47,6 +47,7 @@ Semua error dibalas dengan bentuk yang sama:
 | 403 | `forbidden` | Key valid, tapi tidak punya akses ke kantor yang diminta. |
 | 404 | `not_found` / `item_not_found` | Endpoint tidak ada (API dimatikan) / item tidak ketemu. |
 | 405 | `method_not_allowed` | Method selain GET. |
+| 429 | `rate_limited` | Terlalu banyak request dari key ini - coba lagi setelah waktu di header `Retry-After` (detik). |
 | 503 | `database_unavailable` | Database katalog sedang tidak bisa disambung. |
 
 ## Scope kantor
@@ -167,9 +168,12 @@ database tidak bisa disambung.
 
 ## Batasan saat ini
 
-- **Belum ada rate limit** per key — hindari polling agresif sampai fitur
-  ini tersedia (lihat `TODO.md`).
+- **Rate limit**: 30 request burst per key, terisi ulang 0.5 request/detik
+  (30 request/menit sustained). Kena limit dibalas `429` dengan header
+  `Retry-After` (detik). Belum bisa diatur lewat Panel Admin - kalau
+  butuh angka berbeda, ubah `API_RATE_LIMIT_CAPACITY`/
+  `API_RATE_LIMIT_REFILL_PER_SEC` di `includes/functions.php`.
 - **Belum ada log akses** — request ke API belum tercatat di log
-  terpisah untuk audit (juga di `TODO.md`).
+  terpisah untuk audit (lihat `TODO.md`).
 - Semua endpoint **read-only** — tidak ada cara menulis/mengubah data
   katalog lewat API ini.
