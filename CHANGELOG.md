@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.0] - 2026-09-17
+
+### Added
+- **`GET /api/v1/kantor`** — daftar kantor/gudang yang boleh diakses API
+  key ini (mengikuti scope key, diirisankan dengan kantor yang benar-benar
+  ada di database - kantor yang sudah dihapus/berganti nama otomatis tidak
+  ikut muncul). Berguna buat client tahu nilai `?kantor=` yang valid
+  sebelum menembak `/api/v1/items` atau `/api/v1/items/{kodeitem}`.
+
 ## [1.7.0] - 2026-09-17
 
 ### Added

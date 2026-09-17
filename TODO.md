@@ -39,8 +39,8 @@ diurutkan dari yang menurut saya paling berdampak.
 ## API (akses read-only, dirancang untuk LLM/agent)
 Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
 butuh fondasi tahap sebelumnya):
-- [x] **Endpoint `GET /api/v1/items/{kodeitem}`** — detail item (satuan,
-  harga per satuan, barcode, stok).
+- [x] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif
+  sesuai scope key.
 - [ ] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif
   sesuai scope key.
 - [ ] **Endpoint `GET /api/v1/health`** — tanpa auth, khusus cek
