@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.6.0] - 2026-09-17
+
+### Added
+- **`GET /api/v1/items`** — endpoint pertama dari fitur API: cari item
+  (`?q=`), harga & stok di satu kantor (`?kantor=`, wajib kecuali key
+  cuma punya scope 1 kantor), pagination (`?limit=`, `?offset=`, default
+  20/maks 100). Wajib `Authorization: Bearer <key>` yang aktif & scope
+  kantor-nya sesuai. Query harga sama persis dengan katalog publik
+  (`index.php`) supaya hasilnya konsisten.
+- Helper API baru di `includes/functions.php`: `api_authenticate()`
+  (cek API aktif + validasi key, balas 404/401 JSON kalau gagal),
+  `api_resolve_kantor()` (validasi `?kantor=` terhadap data asli +
+  scope key), `api_pagination_params()`, `api_bearer_token()`,
+  `api_json()`/`api_error()`.
+- URL bersih `/api/v1/items` (lewat `RewriteRule` di `.htaccess`, tidak
+  perlu akses `api/v1/items.php` langsung).
+
 ## [1.5.1] - 2026-09-17
 
 ### Changed

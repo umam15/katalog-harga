@@ -394,6 +394,97 @@ function api_key_kantor_scope(array $apiKeyRow): array {
     return array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
 }
 
+/**
+ * Ambil API key dari header "Authorization: Bearer <key>". Null kalau
+ * headernya tidak ada atau formatnya salah.
+ * $_SERVER['HTTP_AUTHORIZATION'] kadang tidak terisi tergantung konfigurasi
+ * Apache/PHP-FPM (header Authorization sering "disaring" duluan sebelum
+ * sampai ke PHP) - apache_request_headers() dipakai sebagai fallback.
+ */
+function api_bearer_token(): ?string {
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if ($header === '' && function_exists('apache_request_headers')) {
+        foreach (apache_request_headers() as $name => $value) {
+            if (strcasecmp($name, 'Authorization') === 0) { $header = $value; break; }
+        }
+    }
+    if (!preg_match('/^Bearer\s+(\S+)$/i', trim($header), $m)) return null;
+    return $m[1];
+}
+
+/** Kirim respons JSON error API standar lalu hentikan eksekusi. */
+function api_error(int $status, string $code, string $message): void {
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => ['code' => $code, 'message' => $message]], JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+/** Kirim respons JSON sukses lalu hentikan eksekusi. */
+function api_json(array $data, int $status = 200): void {
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
+ * Pemeriksaan wajib di awal tiap endpoint /api/v1/* (kecuali /health, yang
+ * sengaja tanpa auth): API harus aktif & key harus valid. Kalau gagal,
+ * langsung kirim error JSON & exit - pemanggil selalu menerima array key
+ * yang valid kalau fungsi ini return.
+ * API dinonaktifkan/endpoint tidak ada sengaja dibalas 404 yang sama (bukan
+ * 403), supaya tidak membocorkan informasi soal ada/tidaknya API ke pihak
+ * yang belum diautentikasi.
+ */
+function api_authenticate(): array {
+    if (!get_api_enabled()) {
+        api_error(404, 'not_found', 'Endpoint tidak ditemukan.');
+    }
+    $token = api_bearer_token();
+    if ($token === null) {
+        api_error(401, 'unauthorized', 'Header Authorization: Bearer <key> wajib diisi.');
+    }
+    $apiKey = find_active_api_key($token);
+    if ($apiKey === null) {
+        api_error(401, 'unauthorized', 'API key tidak valid.');
+    }
+    return $apiKey;
+}
+
+/**
+ * Validasi parameter ?kantor= terhadap daftar kantor yang benar-benar ada
+ * di database DAN scope API key yang dipakai. Mengirim error 400/403 & exit
+ * kalau tidak valid/tidak diizinkan.
+ */
+function api_resolve_kantor(PDO $pdo, array $apiKey, ?string $requested): string {
+    $scope = api_key_kantor_scope($apiKey); // [] = semua kantor
+    $validKantor = get_kantor_list($pdo);
+    $requested = trim((string) $requested);
+
+    if ($requested === '') {
+        if (count($scope) === 1) return $scope[0];
+        api_error(400, 'kantor_required', 'Parameter kantor wajib diisi.');
+    }
+    if (!in_array($requested, $validKantor, true)) {
+        api_error(400, 'invalid_kantor', "Kantor '$requested' tidak ditemukan.");
+    }
+    if (!empty($scope) && !in_array($requested, $scope, true)) {
+        api_error(403, 'forbidden', "API key ini tidak punya akses ke kantor '$requested'.");
+    }
+    return $requested;
+}
+
+/** Ambil & validasi parameter ?limit=/?offset= dari query string. Return [limit, offset]. */
+function api_pagination_params(int $defaultLimit = 20, int $maxLimit = 100): array {
+    $limit  = (int) ($_GET['limit'] ?? $defaultLimit);
+    $offset = (int) ($_GET['offset'] ?? 0);
+    if ($limit <= 0) $limit = $defaultLimit;
+    if ($limit > $maxLimit) $limit = $maxLimit;
+    if ($offset < 0) $offset = 0;
+    return [$limit, $offset];
+}
+
 /** Kantor/gudang yang sedang aktif untuk user (disimpan di session). */
 function current_kantor(PDO $pdo): string {
     ensure_session();

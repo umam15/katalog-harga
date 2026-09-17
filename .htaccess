@@ -22,3 +22,10 @@
         Header set Cache-Control "public, max-age=604800"
     </FilesMatch>
 </IfModule>
+
+# URL bersih untuk /api/v1/* -> file .php yang sesuai di folder api/v1/.
+# Query string (?q=...&kantor=...) tetap diteruskan apa adanya lewat [QSA].
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^api/v1/items$ api/v1/items.php [QSA,L]
+</IfModule>

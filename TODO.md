@@ -39,17 +39,7 @@ diurutkan dari yang menurut saya paling berdampak.
 ## API (akses read-only, dirancang untuk LLM/agent)
 Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
 butuh fondasi tahap sebelumnya):
-- [x] **Manajemen API key** — generate key format ber-prefix (mis.
-  `kh_live_xxxxx...`, memudahkan secret-scanning kalau bocor, pola sama
-  seperti Stripe/GitHub), ditampilkan sekali saat dibuat, disimpan
-  ter-hash di `settings.db`, banyak key berlabel per integrasi, hapus
-  permanen per-key (bukan soft-delete — sama seperti GitHub/GitLab/
-  Gitea/n8n). Tiap key punya **scope kantor** (whitelist kantor/gudang yang
-  boleh diakses key itu, default = semua kantor aktif) yang disimpan
-  terpisah dari hash sehingga bisa diedit belakangan tanpa regenerate
-  key. Auth lewat header `Authorization: Bearer <key>`, bukan query
-  string.
-- [ ] **Endpoint `GET /api/v1/items`** — cari item (nama/merek/kode/
+- [x] **Endpoint `GET /api/v1/items`** — cari item (nama/merek/kode/
   jenis/barcode), harga & stok per kantor sesuai scope key, dengan
   `limit`/`offset` (pagination wajib, `limit` default kecil & dibatasi
   maksimalnya).
