@@ -39,22 +39,33 @@ diurutkan dari yang menurut saya paling berdampak.
 ## API (akses read-only, dirancang untuk LLM/agent)
 Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
 butuh fondasi tahap sebelumnya):
-- [ ] **Pengaturan API di Panel Admin** — halaman baru "Pengaturan API":
+- [x] **Pengaturan API di Panel Admin** — halaman baru "Pengaturan API":
   toggle enable/disable API secara keseluruhan. Fondasi sebelum endpoint
   dibuat, supaya API defaultnya mati sampai sengaja diaktifkan.
-- [ ] **Manajemen API key** — generate key (ditampilkan sekali saat
-  dibuat, disimpan ter-hash di `settings.db`, pola sama seperti GitHub
-  PAT), banyak key berlabel per integrasi, revoke per-key. Auth lewat
-  header `Authorization: Bearer <key>`, bukan query string.
+- [ ] **Manajemen API key** — generate key format ber-prefix (mis.
+  `kh_live_xxxxx...`, memudahkan secret-scanning kalau bocor, pola sama
+  seperti Stripe/GitHub), ditampilkan sekali saat dibuat, disimpan
+  ter-hash di `settings.db`, banyak key berlabel per integrasi, revoke
+  per-key. Tiap key punya **scope kantor** (whitelist kantor/gudang yang
+  boleh diakses key itu, default = semua kantor aktif) yang disimpan
+  terpisah dari hash sehingga bisa diedit belakangan tanpa regenerate
+  key. Auth lewat header `Authorization: Bearer <key>`, bukan query
+  string.
 - [ ] **Endpoint `GET /api/v1/items`** — cari item (nama/merek/kode/
-  jenis/barcode), harga & stok per kantor, dengan `limit`/`offset`
-  (pagination wajib, `limit` default kecil & dibatasi maksimalnya).
+  jenis/barcode), harga & stok per kantor sesuai scope key, dengan
+  `limit`/`offset` (pagination wajib, `limit` default kecil & dibatasi
+  maksimalnya).
 - [ ] **Endpoint `GET /api/v1/items/{kodeitem}`** — detail item (satuan,
   harga per satuan, barcode, stok).
-- [ ] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif.
+- [ ] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif
+  sesuai scope key.
+- [ ] **Endpoint `GET /api/v1/health`** — tanpa auth, khusus cek
+  uptime/monitoring, tidak expose data apa pun.
 - [ ] **Skema OpenAPI 3.0 di `GET /api/v1/openapi.json`** — self-describing,
   supaya LLM/agent bisa "baca sendiri" cara pakai API tanpa dokumentasi
   terpisah.
+- [ ] **`docs/api.md`** — contoh request `curl` per endpoint + catatan
+  skema, biar dokumentasi teknis lengkap tidak numpuk di README.
 - [ ] **Rate limit per API key** — token bucket sederhana, counter di
   `settings.db` (tanpa Redis), untuk cegah scraping berlebihan/DoS ke
   PostgreSQL.

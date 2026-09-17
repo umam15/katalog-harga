@@ -158,6 +158,9 @@ function get_settings_pdo(): PDO {
             // apakah pembulatan yang sama juga diterapkan di halaman detail.
             'harga_pembulatan'      => '0',
             'bulatkan_harga_detail' => '0', // default: detail menampilkan harga asli (tidak dibulatkan)
+            // Akses API (/api/v1/*) - nonaktif secara default, harus sengaja
+            // diaktifkan admin lewat admin/api-settings.php.
+            'api_enabled' => '0',
         ];
         $ins = $pdo->prepare('INSERT INTO app_settings (key, value) VALUES (?, ?)');
         foreach ($defaults as $k => $v) {
@@ -272,6 +275,20 @@ function get_bulatkan_harga_detail(): bool {
 function bulatkan_harga(float $harga, int $pembulatan): float {
     if ($pembulatan <= 0) return $harga;
     return ceil($harga / $pembulatan) * $pembulatan;
+}
+
+/* ------------------------------- API ----------------------------------- */
+// Akses read-only lewat /api/v1/* (dirancang untuk konsumsi program/LLM),
+// dikembangkan bertahap - lihat TODO.md. Tahap ini baru toggle on/off;
+// endpoint & manajemen API key menyusul di tahap berikutnya.
+
+/** Apakah grup endpoint /api/v1/* diaktifkan. Default: nonaktif sampai sengaja diaktifkan admin. */
+function get_api_enabled(): bool {
+    return get_setting('api_enabled', '0') === '1';
+}
+
+function set_api_enabled(bool $enabled): void {
+    set_setting('api_enabled', $enabled ? '1' : '0');
 }
 
 /** Kantor/gudang yang sedang aktif untuk user (disimpan di session). */

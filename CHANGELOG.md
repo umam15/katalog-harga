@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0] - 2026-09-17
+
+### Added
+- **Pengaturan API** (`admin/api-settings.php`) — halaman admin baru untuk
+  mengaktifkan/menonaktifkan grup endpoint `/api/v1/*` (akses baca-saja
+  untuk integrasi program/agent LLM). Tahap pertama dari rencana fitur API
+  di `TODO.md` — belum ada endpoint atau manajemen API key, itu menyusul
+  di rilis berikutnya. Default: nonaktif.
+
 ## [1.3.1] - 2026-09-17
 
 ### Added

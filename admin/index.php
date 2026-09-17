@@ -52,6 +52,11 @@ $adminTotal = admin_count();
             <span class="admin-card-title">Pengaturan Tampilan</span>
             <span class="admin-card-desc">Kantor, tipe item &amp; stok kosong untuk umum</span>
         </a>
+        <a href="api-settings.php" class="admin-card">
+            <span class="admin-card-icon">🔌</span>
+            <span class="admin-card-title">Pengaturan API</span>
+            <span class="admin-card-desc"><?= get_api_enabled() ? 'Aktif' : 'Nonaktif' ?></span>
+        </a>
         <a href="backup.php" class="admin-card">
             <span class="admin-card-icon">💾</span>
             <span class="admin-card-title">Backup &amp; Restore</span>
