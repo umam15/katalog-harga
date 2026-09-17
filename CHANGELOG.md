@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.1] - 2026-09-17
+
+### Added
+- **`docs/api.md`** — dokumentasi teknis lengkap API: autentikasi, format
+  error, scope kantor, dan contoh `curl` + contoh response tiap endpoint
+  (`items`, `items/{kodeitem}`, `kantor`, `health`). README ditambah satu
+  baris fitur + link ke dokumen ini (detail teknis sengaja tidak numpuk
+  di README).
+
 ## [1.10.0] - 2026-09-17
 
 ### Added
