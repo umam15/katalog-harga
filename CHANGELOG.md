@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.10.0] - 2026-09-17
+
+### Added
+- **`GET /api/v1/openapi.json`** — skema OpenAPI 3.0 lengkap untuk semua
+  endpoint `/api/v1/*` (items, item detail, kantor, health), self-describing
+  supaya agent/LLM bisa baca sendiri cara pakai API tanpa dokumentasi
+  terpisah. Tidak wajib API key (skemanya sendiri bukan data sensitif),
+  tapi tetap balas 404 kalau API dimatikan lewat toggle - konsisten dengan
+  endpoint lain.
+
 ## [1.9.0] - 2026-09-17
 
 ### Added

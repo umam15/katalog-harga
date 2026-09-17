@@ -31,4 +31,5 @@
     RewriteRule ^api/v1/items/([^/]+)$ api/v1/item-detail.php?kodeitem=$1 [QSA,L]
     RewriteRule ^api/v1/kantor$ api/v1/kantor.php [QSA,L]
     RewriteRule ^api/v1/health$ api/v1/health.php [QSA,L]
+    RewriteRule ^api/v1/openapi\.json$ api/v1/openapi.php [QSA,L]
 </IfModule>

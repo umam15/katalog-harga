@@ -39,8 +39,9 @@ diurutkan dari yang menurut saya paling berdampak.
 ## API (akses read-only, dirancang untuk LLM/agent)
 Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
 butuh fondasi tahap sebelumnya):
-- [x] **Endpoint `GET /api/v1/health`** — tanpa auth, khusus cek
-  uptime/monitoring, tidak expose data apa pun.
+- [x] **Skema OpenAPI 3.0 di `GET /api/v1/openapi.json`** — self-describing,
+  supaya LLM/agent bisa "baca sendiri" cara pakai API tanpa dokumentasi
+  terpisah.
 - [ ] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif
   sesuai scope key.
 - [ ] **Endpoint `GET /api/v1/health`** — tanpa auth, khusus cek
