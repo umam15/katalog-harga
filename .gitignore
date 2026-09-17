@@ -1,0 +1,22 @@
+# Data runtime (dibuat otomatis oleh aplikasi, jangan ikut ke-commit)
+/data/*.db
+/data/*.db-*
+/data/img-cache/
+
+# Environment & rahasia lokal
+.env
+.env.*
+!.env.example
+
+# Dependensi (kalau suatu saat pakai Composer)
+/vendor/
+
+# Editor & OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Log
+*.log

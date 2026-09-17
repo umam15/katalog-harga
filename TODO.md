@@ -22,7 +22,6 @@ diurutkan dari yang menurut saya paling berdampak.
 ## Fitur
 - [ ] **Ekspor katalog (CSV/Excel)** dari Panel Admin, supaya data
   harga/stok bisa diunduh tanpa akses langsung ke database.
-- [x] **Pencarian cepat `[/]`** — tambahkan shortcut keyboard `[/]` untuk langsung fokus ke kolom pencarian di katalog publik.
 - [ ] **Index trigram (`pg_trgm`) otomatis** — README masih menyuruh admin
   menjalankan `EXPLAIN ANALYZE` & bikin index manual untuk pencarian
   `ILIKE`. Bisa ditambah tombol "Cek & buat index yang disarankan" di
@@ -38,9 +37,6 @@ diurutkan dari yang menurut saya paling berdampak.
   mendukung API kamera.
 
 ## Dokumentasi
-- [x] **Screenshot UI di README** — tambahkan tangkapan layar (katalog
-  publik, halaman detail, Panel Admin) di `README.md` supaya calon
-  pengguna langsung dapat gambaran tampilan sebelum instal.
 - [ ] **Panduan deploy ke shared hosting (non-Docker)** — README saat ini
   fokus ke setup via Docker; perlu bagian terpisah untuk deploy manual
   (upload lewat FTP/cPanel, persyaratan versi PHP, cara set

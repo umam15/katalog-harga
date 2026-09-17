@@ -1,0 +1,42 @@
+name: CI
+
+# Jalan tiap push & pull request ke main - cek sintaks PHP dan sinkronisasi
+# VERSION/CHANGELOG. Terpisah dari release.yml (yang hanya urus rilis) supaya
+# setiap perubahan kode tervalidasi, bukan cuma saat CHANGELOG berubah.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_pgsql, pdo_sqlite
+          coverage: none
+
+      - name: Lint semua file PHP
+        run: |
+          set -euo pipefail
+          status=0
+          while IFS= read -r -d '' file; do
+            php -l "$file" || status=1
+          done < <(find . -name "*.php" -not -path "./vendor/*" -print0)
+          exit "$status"
+
+      - name: Test VERSION (SSOT) sinkron dengan CHANGELOG
+        run: php tests/test-version.php
+
+      - name: Validasi docker-compose.yml
+        run: docker compose config -q
+
+      - name: Build Docker image (cek Dockerfile tidak rusak)
+        run: docker build -t katalog-harga:ci .

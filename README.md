@@ -56,3 +56,6 @@ Data pengaturan & akun (`data/settings.db`) disimpan di volume `katalog-data`. K
 
 ## Changelog
 Lihat [CHANGELOG.md](CHANGELOG.md).
+
+## Kontribusi
+Mau bantu kembangkan? Lihat [CONTRIBUTING.md](CONTRIBUTING.md).

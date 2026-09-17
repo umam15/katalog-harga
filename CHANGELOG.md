@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.1] - 2026-09-17
+
+### Added
+- File `VERSION` sebagai single source of truth nomor versi — `APP_VERSION`
+  kini dibaca otomatis dari file ini, bukan hardcoded di `includes/functions.php`.
+- `tests/test-version.php` — test ringan tanpa dependensi eksternal yang
+  memastikan `VERSION`, `APP_VERSION`, dan entri `CHANGELOG.md` selalu sinkron.
+- `.gitignore` — mengabaikan data runtime (`data/*.db`, cache gambar), file
+  `.env`, dan artefak editor/OS.
+- `CONTRIBUTING.md` — panduan kontribusi: struktur proyek, gaya kode, alur
+  versioning/rilis, dan checklist pull request.
+- `.github/workflows/ci.yml` — CI penuh di GitHub (lint semua file PHP, jalan
+  test VERSION, validasi `docker-compose.yml`, build image Docker) di setiap
+  push/PR ke `main`. Workflow rilis (`release.yml`) tetap terpisah, khusus
+  memicu rilis saat `CHANGELOG.md` berubah.
+
 ## [1.3.0] - 2026-08-03
 
 ### Added

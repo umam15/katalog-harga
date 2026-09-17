@@ -9,7 +9,13 @@ if (!defined('ROOT_PATH')) {
 }
 // Versi rilis aplikasi - ditampilkan di Panel Admin (Dashboard) dan
 // dicatat di CHANGELOG.md untuk tiap rilis.
-define('APP_VERSION', '1.3.0');
+// Sumber kebenaran tunggal (SSOT) ada di file VERSION - jangan hardcode
+// versi di file lain, cukup ubah file VERSION lalu bump di sini otomatis
+// terbaca. Fallback '0.0.0-unknown' kalau file VERSION hilang/rusak,
+// supaya aplikasi tetap jalan (tidak fatal error) meski versi tak diketahui.
+$versionFile = ROOT_PATH . '/VERSION';
+define('APP_VERSION', is_readable($versionFile) ? trim((string) file_get_contents($versionFile)) : '0.0.0-unknown');
+unset($versionFile);
 define('SETTINGS_DB_PATH', ROOT_PATH . '/data/settings.db');
 define('IMG_CACHE_PATH', ROOT_PATH . '/data/img-cache');
 
