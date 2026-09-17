@@ -39,10 +39,9 @@ diurutkan dari yang menurut saya paling berdampak.
 ## API (akses read-only, dirancang untuk LLM/agent)
 Semua fondasi (pengaturan, manajemen key, endpoint items/detail/kantor/
 health, skema OpenAPI, `docs/api.md`, rate limit, log akses) sudah selesai
-— lihat CHANGELOG. Sisa satu item opsional:
-- [ ] **(Opsional, menyusul)** MCP server terpisah sebagai pembungkus di
-  atas API ini (pola sama seperti `mcp-pgsql-server`) — untuk agent yang
-  sudah bicara MCP native. REST API tetap jadi fondasi utama.
+— lihat CHANGELOG. MCP server wrapper sengaja bukan bagian TODO proyek
+ini — jadi proyek terpisah (pola sama seperti `mcp-pgsql-server`), belum
+dimulai.
 
 ## Dokumentasi
 - [ ] **Panduan deploy ke shared hosting (non-Docker)** — README saat ini

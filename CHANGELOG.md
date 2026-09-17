@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.12.1] - 2026-09-17
+
+### Changed
+- `TODO.md` dirapikan: hapus entri duplikat lama yang seharusnya sudah
+  kehapus tiap fitur API selesai (kantor/health/OpenAPI/docs/rate limit
+  yang sempat numpuk jadi entri "hantu"), dan item MCP server wrapper
+  dikeluarkan dari TODO proyek ini — jadi proyek terpisah di masa depan
+  (pola sama seperti `mcp-pgsql-server`), bukan cakupan `katalog-harga`.
+
 ## [1.12.0] - 2026-09-17
 
 ### Added
