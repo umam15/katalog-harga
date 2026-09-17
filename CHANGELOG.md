@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.12.0] - 2026-09-17
+
+### Added
+- **Log akses & siklus hidup API key** (`admin/api-log.php`) — tabel
+  `api_log` baru mencatat tiap request yang berhasil diautentikasi
+  (label key, endpoint, waktu) serta event key dibuat/dihapus. Label key
+  disimpan sebagai salinan teks, jadi riwayat tetap kebaca meski key-nya
+  sudah dihapus permanen. Tidak pernah mencatat key plaintext. Otomatis
+  disusutkan (retensi ~1% tiap insert), cuma menyimpan 5.000 baris
+  terbaru — tanpa perlu cron terpisah.
+- Link "Log Akses API" ditambahkan di halaman Pengaturan API.
+
 ## [1.11.0] - 2026-09-17
 
 ### Added

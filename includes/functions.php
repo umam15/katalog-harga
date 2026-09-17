@@ -163,6 +163,21 @@ function get_settings_pdo(): PDO {
         updated_at  REAL NOT NULL
     )');
 
+    // Log audit API: request yang berhasil diautentikasi + event siklus
+    // hidup key (dibuat/dihapus). key_label disimpan sebagai SALINAN teks
+    // (bukan JOIN ke api_keys) supaya riwayat tetap kebaca meski key-nya
+    // sudah dihapus - ini satu-satunya jejak yang tersisa untuk key yang
+    // sudah dihapus. Tidak pernah menyimpan key plaintext/hash di sini.
+    $pdo->exec('CREATE TABLE IF NOT EXISTS api_log (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type  TEXT NOT NULL,
+        api_key_id  INTEGER,
+        key_label   TEXT NOT NULL,
+        endpoint    TEXT,
+        detail      TEXT,
+        created_at  TEXT NOT NULL
+    )');
+
     // Migrasi untuk instalasi lama (v1.1.0 ke bawah) yang tabelnya belum
     // punya kolom role.
     $hasRoleColumn = false;
@@ -394,6 +409,38 @@ const API_KEY_PREFIX = 'kh_live_';
  * menampilkannya sekali ke admin lalu membuangnya.
  * $kantorScope kosong berarti key boleh akses semua kantor.
  */
+/** Retensi log akses API - baris lama otomatis dibuang, cuma disimpan API_LOG_MAX_ROWS terbaru. */
+const API_LOG_MAX_ROWS = 5000;
+
+/**
+ * Catat satu event API untuk audit: request yang berhasil diautentikasi
+ * ('request'), atau siklus hidup key ('key_created'/'key_deleted').
+ * $keyLabel disimpan sebagai salinan teks, bukan hanya $apiKeyId, supaya
+ * riwayat tetap kebaca meski key-nya sudah dihapus. Tidak pernah mencatat
+ * key plaintext.
+ * Retensi dijaga otomatis lewat pembersihan acak (~1% dari pemanggilan)
+ * supaya tabelnya tidak tumbuh tanpa batas tanpa perlu cron terpisah.
+ */
+function log_api_event(string $eventType, ?int $apiKeyId, string $keyLabel, ?string $endpoint = null, ?string $detail = null): void {
+    $pdo = get_settings_pdo();
+    $stmt = $pdo->prepare(
+        'INSERT INTO api_log (event_type, api_key_id, key_label, endpoint, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([$eventType, $apiKeyId, $keyLabel, $endpoint, $detail, date('c')]);
+
+    if (random_int(1, 100) === 1) {
+        $pdo->exec('DELETE FROM api_log WHERE id NOT IN (SELECT id FROM api_log ORDER BY id DESC LIMIT ' . API_LOG_MAX_ROWS . ')');
+    }
+}
+
+/** Daftar event log API terbaru untuk ditampilkan di admin, terbaru dulu. */
+function list_api_log(int $limit = 200): array {
+    $stmt = get_settings_pdo()->prepare('SELECT * FROM api_log ORDER BY id DESC LIMIT ?');
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
 function create_api_key(string $label, array $kantorScope): array {
     $label = trim($label);
     if ($label === '') $label = 'Tanpa label';
@@ -411,8 +458,10 @@ function create_api_key(string $label, array $kantorScope): array {
                  VALUES (?, ?, ?, ?, ?)'
             );
             $stmt->execute([$label, $prefix, $hash, $scope, date('c')]);
+            $newId = (int) get_settings_pdo()->lastInsertId();
+            log_api_event('key_created', $newId, $label);
             return [
-                'id'  => (int) get_settings_pdo()->lastInsertId(),
+                'id'  => $newId,
                 'key' => $plaintext,
             ];
         } catch (PDOException $e) {
@@ -440,8 +489,16 @@ function list_api_keys(): array {
  */
 function delete_api_key(int $id): void {
     $pdo = get_settings_pdo();
+    $stmt = $pdo->prepare('SELECT label FROM api_keys WHERE id = ?');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+
     $pdo->prepare('DELETE FROM api_keys WHERE id = ?')->execute([$id]);
     $pdo->prepare('DELETE FROM api_rate_limit WHERE api_key_id = ?')->execute([$id]);
+
+    if ($row) {
+        log_api_event('key_deleted', $id, $row['label']);
+    }
 }
 
 /**
@@ -573,6 +630,8 @@ function api_authenticate(): array {
     if ($retryAfter !== null) {
         api_error(429, 'rate_limited', 'Terlalu banyak request, coba lagi sebentar lagi.', ['Retry-After' => (string) $retryAfter]);
     }
+    $endpoint = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+    log_api_event('request', $apiKey['id'], $apiKey['label'], $endpoint);
     return $apiKey;
 }
 

@@ -37,28 +37,9 @@ diurutkan dari yang menurut saya paling berdampak.
   mendukung API kamera.
 
 ## API (akses read-only, dirancang untuk LLM/agent)
-Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
-butuh fondasi tahap sebelumnya):
-- [x] **Rate limit per API key** — token bucket sederhana, counter di
-  `settings.db` (tanpa Redis), untuk cegah scraping berlebihan/DoS ke
-  PostgreSQL.
-- [ ] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif
-  sesuai scope key.
-- [ ] **Endpoint `GET /api/v1/health`** — tanpa auth, khusus cek
-  uptime/monitoring, tidak expose data apa pun.
-- [ ] **Skema OpenAPI 3.0 di `GET /api/v1/openapi.json`** — self-describing,
-  supaya LLM/agent bisa "baca sendiri" cara pakai API tanpa dokumentasi
-  terpisah.
-- [ ] **`docs/api.md`** — contoh request `curl` per endpoint + catatan
-  skema, biar dokumentasi teknis lengkap tidak numpuk di README.
-- [ ] **Rate limit per API key** — token bucket sederhana, counter di
-  `settings.db` (tanpa Redis), untuk cegah scraping berlebihan/DoS ke
-  PostgreSQL.
-- [ ] **Log akses & siklus hidup API key terpisah** — key label, endpoint,
-  waktu untuk tiap request (untuk audit), plus event dibuat/dihapusnya
-  suatu key (karena key yang dihapus langsung hilang dari `api_keys`,
-  ini satu-satunya cara riwayatnya tetap tercatat). Tidak pernah mencatat
-  key mentah.
+Semua fondasi (pengaturan, manajemen key, endpoint items/detail/kantor/
+health, skema OpenAPI, `docs/api.md`, rate limit, log akses) sudah selesai
+— lihat CHANGELOG. Sisa satu item opsional:
 - [ ] **(Opsional, menyusul)** MCP server terpisah sebagai pembungkus di
   atas API ini (pola sama seperti `mcp-pgsql-server`) — untuk agent yang
   sudah bicara MCP native. REST API tetap jadi fondasi utama.
