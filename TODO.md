@@ -36,6 +36,34 @@ diurutkan dari yang menurut saya paling berdampak.
   dan submit. Perlu fallback yang jelas untuk browser yang tidak
   mendukung API kamera.
 
+## API (akses read-only, dirancang untuk LLM/agent)
+Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
+butuh fondasi tahap sebelumnya):
+- [ ] **Pengaturan API di Panel Admin** — halaman baru "Pengaturan API":
+  toggle enable/disable API secara keseluruhan. Fondasi sebelum endpoint
+  dibuat, supaya API defaultnya mati sampai sengaja diaktifkan.
+- [ ] **Manajemen API key** — generate key (ditampilkan sekali saat
+  dibuat, disimpan ter-hash di `settings.db`, pola sama seperti GitHub
+  PAT), banyak key berlabel per integrasi, revoke per-key. Auth lewat
+  header `Authorization: Bearer <key>`, bukan query string.
+- [ ] **Endpoint `GET /api/v1/items`** — cari item (nama/merek/kode/
+  jenis/barcode), harga & stok per kantor, dengan `limit`/`offset`
+  (pagination wajib, `limit` default kecil & dibatasi maksimalnya).
+- [ ] **Endpoint `GET /api/v1/items/{kodeitem}`** — detail item (satuan,
+  harga per satuan, barcode, stok).
+- [ ] **Endpoint `GET /api/v1/kantor`** — daftar kantor/gudang aktif.
+- [ ] **Skema OpenAPI 3.0 di `GET /api/v1/openapi.json`** — self-describing,
+  supaya LLM/agent bisa "baca sendiri" cara pakai API tanpa dokumentasi
+  terpisah.
+- [ ] **Rate limit per API key** — token bucket sederhana, counter di
+  `settings.db` (tanpa Redis), untuk cegah scraping berlebihan/DoS ke
+  PostgreSQL.
+- [ ] **Log akses API terpisah** — key label, endpoint, waktu, untuk
+  audit; tidak pernah mencatat key mentah.
+- [ ] **(Opsional, menyusul)** MCP server terpisah sebagai pembungkus di
+  atas API ini (pola sama seperti `mcp-pgsql-server`) — untuk agent yang
+  sudah bicara MCP native. REST API tetap jadi fondasi utama.
+
 ## Dokumentasi
 - [ ] **Panduan deploy ke shared hosting (non-Docker)** — README saat ini
   fokus ke setup via Docker; perlu bagian terpisah untuk deploy manual
