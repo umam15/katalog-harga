@@ -42,8 +42,9 @@ butuh fondasi tahap sebelumnya):
 - [x] **Manajemen API key** — generate key format ber-prefix (mis.
   `kh_live_xxxxx...`, memudahkan secret-scanning kalau bocor, pola sama
   seperti Stripe/GitHub), ditampilkan sekali saat dibuat, disimpan
-  ter-hash di `settings.db`, banyak key berlabel per integrasi, revoke
-  per-key. Tiap key punya **scope kantor** (whitelist kantor/gudang yang
+  ter-hash di `settings.db`, banyak key berlabel per integrasi, hapus
+  permanen per-key (bukan soft-delete — sama seperti GitHub/GitLab/
+  Gitea/n8n). Tiap key punya **scope kantor** (whitelist kantor/gudang yang
   boleh diakses key itu, default = semua kantor aktif) yang disimpan
   terpisah dari hash sehingga bisa diedit belakangan tanpa regenerate
   key. Auth lewat header `Authorization: Bearer <key>`, bukan query
@@ -66,8 +67,11 @@ butuh fondasi tahap sebelumnya):
 - [ ] **Rate limit per API key** — token bucket sederhana, counter di
   `settings.db` (tanpa Redis), untuk cegah scraping berlebihan/DoS ke
   PostgreSQL.
-- [ ] **Log akses API terpisah** — key label, endpoint, waktu, untuk
-  audit; tidak pernah mencatat key mentah.
+- [ ] **Log akses & siklus hidup API key terpisah** — key label, endpoint,
+  waktu untuk tiap request (untuk audit), plus event dibuat/dihapusnya
+  suatu key (karena key yang dihapus langsung hilang dari `api_keys`,
+  ini satu-satunya cara riwayatnya tetap tercatat). Tidak pernah mencatat
+  key mentah.
 - [ ] **(Opsional, menyusul)** MCP server terpisah sebagai pembungkus di
   atas API ini (pola sama seperti `mcp-pgsql-server`) — untuk agent yang
   sudah bicara MCP native. REST API tetap jadi fondasi utama.

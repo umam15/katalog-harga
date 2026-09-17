@@ -48,11 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'API key baru berhasil dibuat. Salin sekarang - key ini tidak akan ditampilkan lagi.';
             }
 
-        } elseif ($action === 'revoke_key') {
+        } elseif ($action === 'delete_key') {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
-                revoke_api_key($id);
-                $message = 'API key dicabut.';
+                delete_api_key($id);
+                $message = 'API key dihapus.';
             }
         }
     }
@@ -137,7 +137,6 @@ $apiKeys = list_api_keys();
                     <th>Scope kantor</th>
                     <th>Dibuat</th>
                     <th>Terakhir dipakai</th>
-                    <th>Status</th>
                     <th></th>
                 </tr>
             </thead>
@@ -150,21 +149,12 @@ $apiKeys = list_api_keys();
                     <td><?= htmlspecialchars(substr($k['created_at'], 0, 10)) ?></td>
                     <td><?= $k['last_used_at'] ? htmlspecialchars(substr($k['last_used_at'], 0, 16)) : '<span class="muted-text">Belum pernah</span>' ?></td>
                     <td>
-                        <?php if ($k['revoked_at']): ?>
-                            <span style="color:#b42318;">Dicabut</span>
-                        <?php else: ?>
-                            <span style="color:#1a7f37;">Aktif</span>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <?php if (!$k['revoked_at']): ?>
-                        <form method="POST" onsubmit="return confirm('Cabut API key &quot;<?= htmlspecialchars(addslashes($k['label'])) ?>&quot;? Integrasi yang masih memakainya akan langsung berhenti bisa akses API.');" style="display:inline;">
+                        <form method="POST" onsubmit="return confirm('Hapus API key &quot;<?= htmlspecialchars(addslashes($k['label'])) ?>&quot;? Key langsung tidak bisa dipakai lagi dan tidak bisa dibatalkan.');" style="display:inline;">
                             <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf) ?>">
-                            <input type="hidden" name="action" value="revoke_key">
+                            <input type="hidden" name="action" value="delete_key">
                             <input type="hidden" name="id" value="<?= (int) $k['id'] ?>">
-                            <button type="submit" class="btn btn-secondary btn-sm">Cabut</button>
+                            <button type="submit" class="btn btn-secondary btn-sm">Hapus</button>
                         </form>
-                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

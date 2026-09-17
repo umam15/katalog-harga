@@ -140,8 +140,10 @@ function get_settings_pdo(): PDO {
     // di setiap request API). key_prefix cuma buat identifikasi visual di
     // daftar admin, tidak dipakai untuk autentikasi. kantor_scope kosong
     // berarti key ini boleh akses semua kantor (konsisten dengan pola
-    // display_jenis). revoked_at diisi (bukan baris dihapus) supaya key
-    // yang dicabut tetap kelihatan riwayatnya di daftar.
+    // display_jenis). Key yang dihapus admin langsung DELETE (bukan
+    // soft-delete) - sama seperti GitHub/GitLab/Gitea/n8n; riwayat
+    // akses/penghapusan key adalah tugas log audit terpisah (lihat TODO.md),
+    // bukan tabel ini.
     $pdo->exec('CREATE TABLE IF NOT EXISTS api_keys (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         label         TEXT NOT NULL,
@@ -149,8 +151,7 @@ function get_settings_pdo(): PDO {
         key_hash      TEXT NOT NULL UNIQUE,
         kantor_scope  TEXT NOT NULL DEFAULT \'\',
         created_at    TEXT NOT NULL,
-        last_used_at  TEXT,
-        revoked_at    TEXT
+        last_used_at  TEXT
     )');
 
     // Migrasi untuk instalasi lama (v1.1.0 ke bawah) yang tabelnya belum
@@ -350,30 +351,32 @@ function create_api_key(string $label, array $kantorScope): array {
 /** Daftar semua API key (tanpa key_hash) untuk ditampilkan di admin, terbaru dulu. */
 function list_api_keys(): array {
     $stmt = get_settings_pdo()->query(
-        'SELECT id, label, key_prefix, kantor_scope, created_at, last_used_at, revoked_at
+        'SELECT id, label, key_prefix, kantor_scope, created_at, last_used_at
          FROM api_keys ORDER BY id DESC'
     );
     return $stmt->fetchAll();
 }
 
-/** Cabut API key (soft-delete - baris tetap ada untuk riwayat). Aman dipanggil dua kali. */
-function revoke_api_key(int $id): void {
-    $stmt = get_settings_pdo()->prepare(
-        "UPDATE api_keys SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL"
-    );
-    $stmt->execute([date('c'), $id]);
+/**
+ * Hapus API key secara permanen (bukan soft-delete) - key langsung tidak
+ * bisa dipakai lagi dan hilang dari daftar, sama seperti perilaku
+ * revoke/delete token di GitHub, GitLab, Gitea, dan n8n. Kalau butuh riwayat
+ * siapa-akses-apa-kapan, itu tugas log akses API terpisah (lihat TODO.md),
+ * bukan dengan menyisakan baris key yang sudah mati di tabel ini.
+ */
+function delete_api_key(int $id): void {
+    $stmt = get_settings_pdo()->prepare('DELETE FROM api_keys WHERE id = ?');
+    $stmt->execute([$id]);
 }
 
 /**
- * Cari API key aktif (belum dicabut) dari plaintext yang dikirim client,
- * lalu catat waktu pakai terakhir. Dipakai saat endpoint /api/v1/* memvalidasi
- * header Authorization. Return null kalau key tidak ditemukan/sudah dicabut.
+ * Cari API key dari plaintext yang dikirim client, lalu catat waktu pakai
+ * terakhir. Dipakai saat endpoint /api/v1/* memvalidasi header Authorization.
+ * Return null kalau key tidak ditemukan (termasuk yang sudah dihapus).
  */
 function find_active_api_key(string $plaintext): ?array {
     $hash = hash('sha256', $plaintext);
-    $stmt = get_settings_pdo()->prepare(
-        'SELECT * FROM api_keys WHERE key_hash = ? AND revoked_at IS NULL'
-    );
+    $stmt = get_settings_pdo()->prepare('SELECT * FROM api_keys WHERE key_hash = ?');
     $stmt->execute([$hash]);
     $row = $stmt->fetch();
     if (!$row) return null;

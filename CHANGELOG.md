@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.1] - 2026-09-17
+
+### Changed
+- **API key: revoke (soft-delete) diganti hapus permanen** — di 1.5.0 key
+  yang "dicabut" tetap tersimpan sebagai baris berstatus "Dicabut". Ternyata
+  itu bukan standar industri (GitHub/GitLab/Gitea/n8n semuanya hapus token
+  sepenuhnya saat di-revoke), jadi diperbaiki: tombol "Hapus" sekarang
+  langsung menghapus baris (`DELETE`), bukan `UPDATE revoked_at`. Kolom
+  `revoked_at` di tabel `api_keys` juga dihapus dari skema.
+
 ## [1.5.0] - 2026-09-17
 
 ### Added
