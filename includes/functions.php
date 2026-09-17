@@ -134,6 +134,25 @@ function get_settings_pdo(): PDO {
         created_at    TEXT NOT NULL
     )');
 
+    // API key untuk akses /api/v1/* (baca-saja). key_hash = sha256 dari key
+    // plaintext (bukan password_hash/bcrypt - key ini sudah random
+    // berentropi tinggi, jadi hash cepat cukup dan perlu, karena divalidasi
+    // di setiap request API). key_prefix cuma buat identifikasi visual di
+    // daftar admin, tidak dipakai untuk autentikasi. kantor_scope kosong
+    // berarti key ini boleh akses semua kantor (konsisten dengan pola
+    // display_jenis). revoked_at diisi (bukan baris dihapus) supaya key
+    // yang dicabut tetap kelihatan riwayatnya di daftar.
+    $pdo->exec('CREATE TABLE IF NOT EXISTS api_keys (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        label         TEXT NOT NULL,
+        key_prefix    TEXT NOT NULL,
+        key_hash      TEXT NOT NULL UNIQUE,
+        kantor_scope  TEXT NOT NULL DEFAULT \'\',
+        created_at    TEXT NOT NULL,
+        last_used_at  TEXT,
+        revoked_at    TEXT
+    )');
+
     // Migrasi untuk instalasi lama (v1.1.0 ke bawah) yang tabelnya belum
     // punya kolom role.
     $hasRoleColumn = false;
@@ -289,6 +308,87 @@ function get_api_enabled(): bool {
 
 function set_api_enabled(bool $enabled): void {
     set_setting('api_enabled', $enabled ? '1' : '0');
+}
+
+/** Prefix key plaintext (format "kh_live_"), tetap konstan biar mudah dikenali di secret-scanning. */
+const API_KEY_PREFIX = 'kh_live_';
+
+/**
+ * Bikin API key baru. Mengembalikan array berisi 'id' dan 'key' (plaintext) -
+ * plaintext HANYA ada di sini, tidak pernah disimpan; pemanggil wajib
+ * menampilkannya sekali ke admin lalu membuangnya.
+ * $kantorScope kosong berarti key boleh akses semua kantor.
+ */
+function create_api_key(string $label, array $kantorScope): array {
+    $label = trim($label);
+    if ($label === '') $label = 'Tanpa label';
+    $scope = implode(',', array_values(array_filter(array_map('trim', $kantorScope), fn($v) => $v !== '')));
+
+    // Percobaan ulang kecil kalau (sangat jarang) key_hash bentrok - key
+    // 192-bit random, peluang collision-nya praktis nol, ini cuma jaga-jaga.
+    for ($attempt = 0; $attempt < 3; $attempt++) {
+        $plaintext = API_KEY_PREFIX . bin2hex(random_bytes(24));
+        $hash = hash('sha256', $plaintext);
+        $prefix = substr($plaintext, 0, strlen(API_KEY_PREFIX) + 8);
+        try {
+            $stmt = get_settings_pdo()->prepare(
+                'INSERT INTO api_keys (label, key_prefix, key_hash, kantor_scope, created_at)
+                 VALUES (?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([$label, $prefix, $hash, $scope, date('c')]);
+            return [
+                'id'  => (int) get_settings_pdo()->lastInsertId(),
+                'key' => $plaintext,
+            ];
+        } catch (PDOException $e) {
+            if ($attempt === 2) throw $e;
+        }
+    }
+    throw new RuntimeException('Gagal membuat API key setelah beberapa percobaan.');
+}
+
+/** Daftar semua API key (tanpa key_hash) untuk ditampilkan di admin, terbaru dulu. */
+function list_api_keys(): array {
+    $stmt = get_settings_pdo()->query(
+        'SELECT id, label, key_prefix, kantor_scope, created_at, last_used_at, revoked_at
+         FROM api_keys ORDER BY id DESC'
+    );
+    return $stmt->fetchAll();
+}
+
+/** Cabut API key (soft-delete - baris tetap ada untuk riwayat). Aman dipanggil dua kali. */
+function revoke_api_key(int $id): void {
+    $stmt = get_settings_pdo()->prepare(
+        "UPDATE api_keys SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL"
+    );
+    $stmt->execute([date('c'), $id]);
+}
+
+/**
+ * Cari API key aktif (belum dicabut) dari plaintext yang dikirim client,
+ * lalu catat waktu pakai terakhir. Dipakai saat endpoint /api/v1/* memvalidasi
+ * header Authorization. Return null kalau key tidak ditemukan/sudah dicabut.
+ */
+function find_active_api_key(string $plaintext): ?array {
+    $hash = hash('sha256', $plaintext);
+    $stmt = get_settings_pdo()->prepare(
+        'SELECT * FROM api_keys WHERE key_hash = ? AND revoked_at IS NULL'
+    );
+    $stmt->execute([$hash]);
+    $row = $stmt->fetch();
+    if (!$row) return null;
+
+    $upd = get_settings_pdo()->prepare('UPDATE api_keys SET last_used_at = ? WHERE id = ?');
+    $upd->execute([date('c'), $row['id']]);
+
+    return $row;
+}
+
+/** Kantor yang boleh diakses sebuah API key. Array kosong = semua kantor (tanpa batasan). */
+function api_key_kantor_scope(array $apiKeyRow): array {
+    $raw = trim($apiKeyRow['kantor_scope'] ?? '');
+    if ($raw === '') return [];
+    return array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
 }
 
 /** Kantor/gudang yang sedang aktif untuk user (disimpan di session). */

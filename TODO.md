@@ -39,10 +39,7 @@ diurutkan dari yang menurut saya paling berdampak.
 ## API (akses read-only, dirancang untuk LLM/agent)
 Dikerjakan bertahap, urutan di bawah = urutan pengerjaan (tahap belakang
 butuh fondasi tahap sebelumnya):
-- [x] **Pengaturan API di Panel Admin** — halaman baru "Pengaturan API":
-  toggle enable/disable API secara keseluruhan. Fondasi sebelum endpoint
-  dibuat, supaya API defaultnya mati sampai sengaja diaktifkan.
-- [ ] **Manajemen API key** — generate key format ber-prefix (mis.
+- [x] **Manajemen API key** — generate key format ber-prefix (mis.
   `kh_live_xxxxx...`, memudahkan secret-scanning kalau bocor, pola sama
   seperti Stripe/GitHub), ditampilkan sekali saat dibuat, disimpan
   ter-hash di `settings.db`, banyak key berlabel per integrasi, revoke

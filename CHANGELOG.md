@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] - 2026-09-17
+
+### Added
+- **Manajemen API key** di `admin/api-settings.php` — generate key format
+  `kh_live_...` (ditampilkan sekali saat dibuat, disimpan ter-hash SHA-256
+  di `settings.db`), label per key, revoke (soft-delete, riwayat tetap
+  kelihatan), dan **scope kantor** per key (kosong = semua kantor). Tabel
+  `api_keys` baru dibuat otomatis. Tahap kedua dari rencana fitur API di
+  `TODO.md` — endpoint `/api/v1/*` yang benar-benar memvalidasi key ini
+  menyusul di rilis berikutnya.
+
 ## [1.4.0] - 2026-09-17
 
 ### Added
