@@ -41,52 +41,7 @@ if (!$item) {
     exit;
 }
 
-$sistem = strtoupper($item['sistemhargajual']);
-$hargaList = [];
-
-// Ambil SEMUA barcode item ini dalam satu query, lalu kelompokkan per satuan di PHP.
-// Sebelumnya query barcode dijalankan ulang di dalam loop untuk tiap satuan (N+1 query) -
-// sekarang cukup satu round-trip ke database berapa pun jumlah satuannya.
-$sqlB = "SELECT satuan, kodebarcode FROM tbl_itemsatuanjml WHERE kodeitem = ?";
-$stmtB = $pdo->prepare($sqlB);
-$stmtB->execute([$id]);
-$barcodeMap = [];
-foreach ($stmtB->fetchAll() as $b) {
-    $barcodeMap[$b['satuan']][] = $b['kodebarcode'];
-}
-
-if ($sistem === 'O') {
-    $barcodes = $barcodeMap[$item['satuandasar']] ?? [];
-    $hargaList[] = [
-        'satuan'  => $item['satuandasar'],
-        'barcode' => !empty($barcodes) ? implode(', ', $barcodes) : '-',
-        'harga'   => $item['hargajual1'],
-        'info'    => '',
-    ];
-} elseif (in_array($sistem, ['S', 'L', 'J'], true)) {
-    $sqlHj = "SELECT hj.satuan, hj.hargajual, hj.level, hj.jmlsampai
-              FROM tbl_itemhj hj WHERE hj.kodeitem = ?";
-    $stmtHj = $pdo->prepare($sqlHj);
-    $stmtHj->execute([$id]);
-
-    foreach ($stmtHj->fetchAll() as $hj) {
-        if ($sistem === 'L' && (int)$hj['level'] !== 1) continue;
-        if ($sistem === 'J' && (float)$hj['jmlsampai'] < 1) continue;
-
-        $barcodes = $barcodeMap[$hj['satuan']] ?? [];
-
-        $infoEkstra = '';
-        if ($sistem === 'L') $infoEkstra = "(Level: {$hj['level']})";
-        if ($sistem === 'J') $infoEkstra = "(Sampai: " . round((float)$hj['jmlsampai']) . ")";
-
-        $hargaList[] = [
-            'satuan'  => $hj['satuan'],
-            'barcode' => !empty($barcodes) ? implode(', ', $barcodes) : '-',
-            'harga'   => $hj['hargajual'],
-            'info'    => $infoEkstra,
-        ];
-    }
-}
+$hargaList = get_item_harga_list($pdo, $id, $item['sistemhargajual'], (float) $item['hargajual1'], $item['satuandasar']);
 
 $stokKosong = (float)$item['stok'] <= 0;
 

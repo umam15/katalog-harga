@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.7.0] - 2026-09-17
+
+### Added
+- **`GET /api/v1/items/{kodeitem}`** — detail satu item: info dasar,
+  daftar harga per satuan + barcode + stok di kantor terpilih (`?kantor=`).
+  Auth & aturan scope kantor sama seperti `/api/v1/items`.
+- `get_item_harga_list()` di `includes/functions.php` — logika hitung
+  daftar harga per satuan (sistem 'O'/'S'/'L'/'J') diekstrak dari
+  `detail.php` jadi fungsi bersama, dipakai baik oleh halaman detail
+  publik maupun endpoint API ini (sebelumnya logikanya dobel).
+
+### Changed
+- `detail.php` direfaktor memakai `get_item_harga_list()` — tidak ada
+  perubahan perilaku/tampilan, cuma menghapus duplikasi kode.
+
 ## [1.6.0] - 2026-09-17
 
 ### Added

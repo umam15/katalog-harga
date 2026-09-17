@@ -28,4 +28,5 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteRule ^api/v1/items$ api/v1/items.php [QSA,L]
+    RewriteRule ^api/v1/items/([^/]+)$ api/v1/item-detail.php?kodeitem=$1 [QSA,L]
 </IfModule>

@@ -297,6 +297,71 @@ function bulatkan_harga(float $harga, int $pembulatan): float {
     return ceil($harga / $pembulatan) * $pembulatan;
 }
 
+/**
+ * Daftar harga per satuan untuk sebuah item, sesuai sistem harga jualnya:
+ *   - 'O' (harga tetap)   -> $hargaJual1 langsung, satuan dasar saja.
+ *   - 'S'/'L'/'J'         -> dari tbl_itemhj, diambil tingkatan terendah
+ *                            (level 1 untuk 'L', jmlsampai terkecil untuk 'J').
+ * Tiap baris hasil: satuan, barcode (gabungan ", " kalau lebih dari satu,
+ * "-" kalau tidak ada), harga, level/jmlsampai (null kalau tidak relevan),
+ * dan info (versi teks siap tampil dari level/jmlsampai, dipakai halaman
+ * detail publik).
+ * Dipakai bareng oleh detail.php (halaman publik) dan
+ * GET /api/v1/items/{kodeitem} (API) supaya logikanya tidak dobel.
+ */
+function get_item_harga_list(PDO $pdo, string $kodeitem, string $sistem, float $hargaJual1, string $satuanDasar): array {
+    $sistem = strtoupper($sistem);
+    $hargaList = [];
+
+    // Semua barcode item ini diambil sekali, dikelompokkan per satuan di
+    // PHP - menghindari N+1 query per satuan.
+    $stmtB = $pdo->prepare('SELECT satuan, kodebarcode FROM tbl_itemsatuanjml WHERE kodeitem = ?');
+    $stmtB->execute([$kodeitem]);
+    $barcodeMap = [];
+    foreach ($stmtB->fetchAll() as $b) {
+        $barcodeMap[$b['satuan']][] = $b['kodebarcode'];
+    }
+
+    if ($sistem === 'O') {
+        $barcodes = $barcodeMap[$satuanDasar] ?? [];
+        $hargaList[] = [
+            'satuan'    => $satuanDasar,
+            'barcode'   => !empty($barcodes) ? implode(', ', $barcodes) : '-',
+            'harga'     => (float) $hargaJual1,
+            'level'     => null,
+            'jmlsampai' => null,
+            'info'      => '',
+        ];
+    } elseif (in_array($sistem, ['S', 'L', 'J'], true)) {
+        $stmtHj = $pdo->prepare('SELECT hj.satuan, hj.hargajual, hj.level, hj.jmlsampai FROM tbl_itemhj hj WHERE hj.kodeitem = ?');
+        $stmtHj->execute([$kodeitem]);
+
+        foreach ($stmtHj->fetchAll() as $hj) {
+            if ($sistem === 'L' && (int) $hj['level'] !== 1) continue;
+            if ($sistem === 'J' && (float) $hj['jmlsampai'] < 1) continue;
+
+            $barcodes = $barcodeMap[$hj['satuan']] ?? [];
+
+            $level     = $sistem === 'L' ? (int) $hj['level'] : null;
+            $jmlsampai = $sistem === 'J' ? (float) $hj['jmlsampai'] : null;
+            $info = '';
+            if ($level !== null)     $info = "(Level: $level)";
+            if ($jmlsampai !== null) $info = '(Sampai: ' . round($jmlsampai) . ')';
+
+            $hargaList[] = [
+                'satuan'    => $hj['satuan'],
+                'barcode'   => !empty($barcodes) ? implode(', ', $barcodes) : '-',
+                'harga'     => (float) $hj['hargajual'],
+                'level'     => $level,
+                'jmlsampai' => $jmlsampai,
+                'info'      => $info,
+            ];
+        }
+    }
+
+    return $hargaList;
+}
+
 /* ------------------------------- API ----------------------------------- */
 // Akses read-only lewat /api/v1/* (dirancang untuk konsumsi program/LLM),
 // dikembangkan bertahap - lihat TODO.md. Tahap ini baru toggle on/off;
