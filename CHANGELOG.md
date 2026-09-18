@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.12.2] - 2026-09-18
+
+### Changed
+- Halaman Pengaturan API: hapus paragraf basi yang bilang endpoint
+  `/api/v1/*` "belum tersedia" (padahal sudah lengkap), diganti pointer
+  ke `docs/api.md`. Hapus juga kalimat "kosongkan untuk akses semua
+  kantor" yang terduplikasi.
+
+### Removed
+- Badge shortcut `/` di kolom pencarian katalog publik — tumpang
+  tindih dengan tombol clear (×) bawaan `input[type=search]` di
+  beberapa browser sehingga tampilannya berantakan. Shortcut keyboard
+  `/` untuk fokus ke pencarian tetap berfungsi, hanya indikator
+  visualnya yang dihapus.
+
 ## [1.12.1] - 2026-09-17
 
 ### Changed

@@ -123,7 +123,7 @@ $apiKeys = list_api_keys();
     </form>
 
     <h2 class="section-title">API Key</h2>
-    <p class="muted-text">Tiap key bisa dibatasi ke kantor/gudang tertentu (kosongkan untuk akses semua kantor). Lihat <a href="api-log.php">Log Akses API</a> untuk riwayat request &amp; key yang dibuat/dihapus.</p>
+    <p class="muted-text">Tiap key bisa dibatasi ke kantor/gudang tertentu. Lihat <a href="api-log.php">Log Akses API</a> untuk riwayat request &amp; key yang dibuat/dihapus.</p>
 
     <?php if (empty($apiKeys)): ?>
         <p class="muted-text">Belum ada API key.</p>
@@ -195,9 +195,8 @@ $apiKeys = list_api_keys();
     </form>
 
     <p class="muted-text" style="margin-top:2rem;">
-        Endpoint API (<code>/api/v1/items</code> dll) belum tersedia — menyusul di
-        rilis berikutnya (lihat <code>TODO.md</code>). Key yang dibuat di sini sudah
-        bisa disiapkan sejak sekarang.
+        Detail tiap endpoint (parameter, response, skema OpenAPI) ada di
+        <code>docs/api.md</code>.
     </p>
 </main>
 </body>

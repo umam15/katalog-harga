@@ -175,7 +175,6 @@ $ajaxBaseQs = http_build_query($ajaxParams);
                        placeholder="Cari atau scan kode item…"
                        value="<?= htmlspecialchars($search) ?>" autocomplete="off"
                        enterkeyhint="search" inputmode="search">
-                <kbd class="search-shortcut-hint" id="searchShortcutHint" aria-hidden="true">/</kbd>
             </div>
         </form>
         <?php if ($loggedIn && !empty($kantorList)): ?>
