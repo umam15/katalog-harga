@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.12.5] - 2026-09-26
+
+### Changed
+- `TODO.md`: tambah catatan batas eksplisit — database PostgreSQL
+  (`i5_2026`) adalah **server produksi POS iPos5 milik toko yang sedang
+  berjalan**, aplikasi ini cuma konsumen read-only dan tidak boleh
+  mengusulkan perubahan skema/index/extension di server itu.
+- Dicoret dari daftar kerja (butuh perubahan di server produksi, di luar
+  cakupan aplikasi): index `tbl_itemstok(kantor, kodeitem)` dan index
+  trigram (`pg_trgm`). Dipindah ke catatan di bagian bawah `TODO.md`,
+  bukan lagi item aktif.
+
+## [1.12.4] - 2026-09-26
+
+### Changed
+- `TODO.md`: 3 item dugaan diverifikasi langsung ke database
+  (`i5_2026`) lewat `mcp-pgsql`, bukan lagi tebakan dari DDL:
+  - `tbl_itemstok` benar-benar **tanpa index sama sekali** (dikonfirmasi,
+    bukan sekadar dugaan) - tapi cuma ~1.727 baris jadi dampaknya nyaris
+    nol saat ini; tetap dicatat sebagai best practice murah.
+  - `tbl_item`, `tbl_itemhj`, `tbl_itemsatuanjml` **sudah punya index
+    yang relevan** untuk pola query aplikasi ini - dicoret dari daftar
+    "perlu index".
+  - Index trigram (`pg_trgm`) & keyset pagination **ditunda**: extension
+    `pg_trgm` belum terpasang dan `tbl_item` cuma ~3.620 baris - di
+    skala ini keduanya premature optimization.
+
+## [1.12.3] - 2026-09-26
+
+### Changed
+- `TODO.md` disusun ulang: digabung dengan hasil review teknis
+  `docs/OPTIMIZATION.md` (6 kandidat performa/keamanan diterima -
+  cache setting per-request, atomic write & validasi MIME cache
+  gambar, throttle write SQLite di API, pisahkan error DB untuk
+  UI/log, hardening session). 2 kandidat lain ditandai sudah
+  selesai/tidak relevan (ETag image cache sudah ada sejak v1.2.6;
+  invalidasi cache gambar otomatis ditolak karena bertentangan
+  dengan tujuan cache itu sendiri) dan tidak dimasukkan. Item
+  duplikat dengan bagian Keamanan yang sudah ada tidak digandakan.
+
 ## [1.12.2] - 2026-09-18
 
 ### Changed
