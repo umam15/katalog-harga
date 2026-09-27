@@ -99,6 +99,12 @@ kerja:
   ini. (Sebagai catatan tambahan: extension ini belum terpasang dan
   `tbl_item` cuma ~3.620 baris, jadi walau bukan soal wewenang, secara
   performa juga belum dibutuhkan.)
+- Garbage collection otomatis untuk `data/img-cache/` — **ditunda**: di
+  skala ~3.620 item (maks 2 varian file/item: penuh + thumbnail), file
+  cache basi/orphan (item dihapus dari iPos5) berdampak nyaris nol ke
+  disk. Tombol manual "Bersihkan cache gambar" di Panel Admin sudah
+  cukup untuk kasus jarang ini. Pertimbangkan lagi kalau katalog membesar
+  signifikan (mis. >50.000 item) atau disk usage cache jadi masalah nyata.
 
 Kalau ada prioritas atau item lain yang mau ditambahkan/dicoret, tinggal
 update file ini langsung.

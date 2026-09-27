@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.6] - 2026-09-27
+
+### Changed
+- `TODO.md`: kandidat terakhir dari `docs/OPTIMIZATION.md` (garbage
+  collection otomatis untuk `data/img-cache/`) dinilai dan ditunda —
+  di skala ~3.620 item dampaknya nyaris nol, tombol manual "Bersihkan
+  cache gambar" sudah cukup. Seluruh 15 kandidat `docs/OPTIMIZATION.md`
+  kini sudah dipilah (diterima jadi item kerja atau ditunda/dicoret
+  dengan alasan).
+
 ## [1.12.5] - 2026-09-26
 
 ### Changed
