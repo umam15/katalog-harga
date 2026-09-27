@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.15.2] - 2026-09-27
+
+### Fixed
+- **Atomic write cache gambar** — `image.php` sebelumnya pakai
+  `file_put_contents()` langsung ke path final; dua request bersamaan untuk
+  kodeitem yang sama-sama baru pertama kali diakses berisiko salah satunya
+  baca file cache yang belum selesai ditulis (korup/separuh). Sekarang lewat
+  helper baru `atomic_file_put_contents()` (`includes/functions.php`):
+  tulis ke file sementara unik dulu, baru `rename()` (atomic di filesystem
+  Linux yang sama) ke path final.
+
 ## [1.15.1] - 2026-09-27
 
 ### Changed

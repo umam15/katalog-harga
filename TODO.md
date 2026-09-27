@@ -14,9 +14,6 @@ ternyata butuh itu dicoret dari daftar kerja dan dipindah ke catatan di
 bagian bawah, bukan tanggung jawab aplikasi ini untuk dieksekusi.
 
 ## Performa & Robustness
-- [ ] **Atomic write cache gambar** — `image.php` pakai `file_put_contents()`
-  polos tanpa `LOCK_EX`/temp+rename; request bersamaan pada item yang baru
-  pertama kali diakses berisiko file cache korup/terbaca separuh.
 - [ ] **Validasi MIME gambar di `image.php`** — `serve_cached_file()` selalu
   set `Content-Type: image/jpeg` walau data `tbl_item.gambar` belum tentu
   JPEG. Deteksi tipe asli (mis. `finfo`/`getimagesizefromstring`) sebelum

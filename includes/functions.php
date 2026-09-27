@@ -47,6 +47,27 @@ function ensure_img_cache_dir(): void {
 }
 
 /**
+ * Tulis file secara atomic: simpan ke file sementara unik di folder yang
+ * sama dulu, baru rename() ke path final. rename() di filesystem yang sama
+ * atomic di Linux - proses lain yang baca $path bersamaan selalu dapat
+ * versi lama (file belum ada) atau versi baru yang utuh, tidak pernah baca
+ * file cache gambar yang lagi ditulis separuh (mis. 2 request bersamaan
+ * untuk kodeitem yang sama-sama baru pertama kali diakses).
+ */
+function atomic_file_put_contents(string $path, string $data): bool {
+    $tmp = $path . '.tmp-' . bin2hex(random_bytes(4));
+    if (@file_put_contents($tmp, $data, LOCK_EX) === false) {
+        @unlink($tmp);
+        return false;
+    }
+    if (!@rename($tmp, $path)) {
+        @unlink($tmp);
+        return false;
+    }
+    return true;
+}
+
+/**
  * Path file cache untuk sebuah kodeitem. Nama file di-hash (bukan pakai
  * kodeitem apa adanya) supaya aman dari karakter aneh / path traversal
  * lewat parameter ?id= di image.php.

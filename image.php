@@ -89,11 +89,11 @@ if (!$row || empty($row['data'])) {
 $binary = base64_decode($row['data']);
 
 ensure_img_cache_dir();
-file_put_contents($paths['full'], $binary);
+atomic_file_put_contents($paths['full'], $binary);
 
 $thumbData = make_thumbnail($binary);
 if ($thumbData !== null) {
-    file_put_contents($paths['thumb'], $thumbData);
+    atomic_file_put_contents($paths['thumb'], $thumbData);
 }
 
 serve_cached_file($wantThumb && $thumbData !== null ? $paths['thumb'] : $paths['full']);
