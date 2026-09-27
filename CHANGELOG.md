@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.14.0] - 2026-09-27
+
+### Added
+- **Security header** untuk semua respons, diset lewat `.htaccess`
+  (`mod_headers`, satu titik kontrol untuk halaman publik, panel admin,
+  dan `/api/v1/*` sekaligus): `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy:
+  strict-origin-when-cross-origin`, dan `Content-Security-Policy`
+  (`default-src 'self'` + `frame-ancestors 'none'` + `object-src 'none'`
+  + `base-uri`/`form-action 'self'`). CSP sengaja masih mengizinkan
+  `'unsafe-inline'` untuk `script-src`/`style-src` karena aplikasi masih
+  pakai banyak `onclick`/`onsubmit`/`<script>` inline - proteksi utamanya
+  membatasi SEMUA resource cuma boleh dari origin sendiri (menutup celah
+  eksfiltrasi ke domain lain meski XSS terjadi). Tidak ada perubahan kode
+  PHP; `mod_headers` sudah aktif di Dockerfile sejak v1.2.6.
+
 ## [1.13.1] - 2026-09-27
 
 ### Changed

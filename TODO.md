@@ -14,9 +14,6 @@ ternyata butuh itu dicoret dari daftar kerja dan dipindah ke catatan di
 bagian bawah, bukan tanggung jawab aplikasi ini untuk dieksekusi.
 
 ## Keamanan
-- [ ] **Security header di `.htaccess`/`config.php`** — belum ada
-  `X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
-  `Content-Security-Policy`.
 - [ ] **Pisahkan pesan error database untuk UI vs log internal** — saat ini
   exception PDO berpotensi tampil apa adanya ke user; standar OWASP:
   pesan generik ke UI, detail teknis hanya ke log server.
@@ -74,6 +71,12 @@ dimulai.
 ## Lain-lain
 - [ ] Review apakah `admin/backup.php` perlu opsi backup terjadwal (cron),
   bukan cuma manual lewat UI.
+- [ ] **Pindahkan `onclick`/`onsubmit` inline & `<script>` inline ke file
+  `.js` eksternal** (`index.php`, beberapa halaman `admin/*`) — supaya
+  `'unsafe-inline'` bisa dicabut dari `script-src` di Content-Security-Policy
+  (`.htaccess`) untuk proteksi XSS yang lebih ketat. Bukan bug, cuma
+  pengetatan lanjutan; risiko regresi UI kalau dikerjakan terburu-buru,
+  jadi perlu dites manual tiap halaman yang disentuh.
 
 ---
 Catatan: dari review `docs/OPTIMIZATION.md`, beberapa kandidat sudah

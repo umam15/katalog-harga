@@ -1,3 +1,20 @@
+# Security header untuk semua respons (statis maupun lewat PHP, termasuk
+# panel admin & /api/v1/*) - satu titik kontrol lewat Apache, bukan
+# per-file PHP, supaya konsisten di semua halaman tanpa terkecuali.
+# CSP sengaja masih mengizinkan 'unsafe-inline' untuk script & style:
+# aplikasi ini pakai banyak onclick/onsubmit inline dan <script> inline
+# (lihat index.php, admin/*) - proteksi utama di sini adalah membatasi
+# SEMUA resource (script/style/gambar/font) cuma boleh dari origin sendiri,
+# menutup celah eksfiltrasi/loading resource pihak ketiga meski XSS terjadi.
+# Kalau nanti onclick/onsubmit inline dipindah ke file .js eksternal,
+# 'unsafe-inline' bisa dicabut dari script-src untuk proteksi lebih ketat.
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+</IfModule>
+
 # Kompresi respons teks (HTML/CSS/JS/JSON) - mengurangi ukuran transfer
 # tanpa mengubah apa pun di sisi PHP.
 <IfModule mod_deflate.c>
