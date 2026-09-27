@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.13.1] - 2026-09-27
+
+### Changed
+- `TODO.md`: item "Alur reset password admin (skrip CLI)" ditunda — target
+  deployment utama aplikasi ini adalah Synology Web Station, di mana skrip
+  CLI/SSH bukan alur kerja yang wajar buat pemilik toko. Dipindah ke
+  catatan bawah, solusi berbasis web perlu dipikirkan ulang sebelum masuk
+  lagi jadi item kerja aktif.
+
 ## [1.13.0] - 2026-09-27
 
 ### Added

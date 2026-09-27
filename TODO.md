@@ -17,9 +17,6 @@ bagian bawah, bukan tanggung jawab aplikasi ini untuk dieksekusi.
 - [ ] **Security header di `.htaccess`/`config.php`** — belum ada
   `X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
   `Content-Security-Policy`.
-- [ ] **Alur reset password admin** — belum ada jalan keluar selain akses
-  langsung ke `data/settings.db` kalau satu-satunya admin lupa password.
-  Pertimbangkan skrip CLI kecil (bukan lewat web).
 - [ ] **Pisahkan pesan error database untuk UI vs log internal** — saat ini
   exception PDO berpotensi tampil apa adanya ke user; standar OWASP:
   pesan generik ke UI, detail teknis hanya ke log server.
@@ -102,6 +99,14 @@ kerja:
   disk. Tombol manual "Bersihkan cache gambar" di Panel Admin sudah
   cukup untuk kasus jarang ini. Pertimbangkan lagi kalau katalog membesar
   signifikan (mis. >50.000 item) atau disk usage cache jadi masalah nyata.
+- **Alur reset password admin (skrip CLI)** — **ditunda**: aplikasi ini
+  diutamakan untuk deployment di Synology Web Station, di mana menjalankan
+  skrip CLI/SSH bukan alur kerja yang wajar buat pemilik toko sehari-hari
+  (butuh akses shell terpisah, tidak sejalan dengan pengalaman NAS berbasis
+  web). Kebutuhannya tetap ada (satu-satunya admin lupa password), tapi
+  solusinya perlu dipikirkan ulang lewat jalur web yang aman (mis. token
+  reset sekali pakai lewat file/`data/`, bukan skrip terminal terpisah)
+  sebelum masuk lagi sebagai item kerja aktif.
 
 Kalau ada prioritas atau item lain yang mau ditambahkan/dicoret, tinggal
 update file ini langsung.
