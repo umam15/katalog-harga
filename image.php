@@ -27,11 +27,28 @@ function serve_placeholder(): void {
 }
 
 /**
+ * Deteksi MIME image sebenarnya dari file di disk - foto produk di database
+ * bisa saja PNG/WEBP/GIF, bukan cuma JPEG, jadi tidak boleh diasumsikan.
+ * Pakai getimagesize() (bukan …fromstring): cuma baca header file secukupnya
+ * untuk kenali format, bukan seluruh isi file - murah walau filenya besar.
+ * Fallback ke image/jpeg kalau gagal dideteksi (format tak dikenal/rusak),
+ * sama seperti perilaku lama.
+ */
+function detect_image_mime(string $path): string {
+    $info = @getimagesize($path);
+    return ($info && !empty($info['mime'])) ? $info['mime'] : 'image/jpeg';
+}
+
+/**
  * Serve file cache di disk, dengan dukungan ETag/If-None-Match supaya
  * browser bisa dapat 304 (tanpa transfer ulang byte gambar) setelah
  * max-age 1 hari habis, tanpa perlu balik ke database.
+ * $mime: pakai nilai ini langsung kalau sudah pasti diketahui (mis. file
+ * thumbnail selalu JPEG dari make_thumbnail()) - hindari deteksi berulang
+ * yang tidak perlu. null berarti deteksi otomatis (dipakai untuk file
+ * "full" yang formatnya mengikuti data asli di database).
  */
-function serve_cached_file(string $path): void {
+function serve_cached_file(string $path, ?string $mime = null): void {
     $etag = '"' . md5_file($path) . '"';
     header('Cache-Control: public, max-age=86400');
     header('ETag: ' . $etag);
@@ -42,7 +59,7 @@ function serve_cached_file(string $path): void {
         return;
     }
 
-    header('Content-Type: image/jpeg');
+    header('Content-Type: ' . ($mime ?? detect_image_mime($path)));
     header('Content-Length: ' . filesize($path));
     readfile($path);
 }
@@ -56,7 +73,7 @@ if (file_exists($paths['none'])) {
 
 // --- 2) Ada di cache -> serve dari disk, tanpa sentuh database.
 if (file_exists($cacheFile)) {
-    serve_cached_file($cacheFile);
+    serve_cached_file($cacheFile, $wantThumb ? 'image/jpeg' : null);
     exit;
 }
 // Kalau yang diminta thumbnail tapi belum ada (mis. GD tidak tersedia saat
@@ -96,4 +113,5 @@ if ($thumbData !== null) {
     atomic_file_put_contents($paths['thumb'], $thumbData);
 }
 
-serve_cached_file($wantThumb && $thumbData !== null ? $paths['thumb'] : $paths['full']);
+$serveThumb = $wantThumb && $thumbData !== null;
+serve_cached_file($serveThumb ? $paths['thumb'] : $paths['full'], $serveThumb ? 'image/jpeg' : null);

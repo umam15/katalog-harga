@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.15.3] - 2026-09-27
+
+### Fixed
+- **Validasi MIME gambar di `image.php`** — `serve_cached_file()` sebelumnya
+  selalu set `Content-Type: image/jpeg`, padahal data mentah `tbl_item.gambar`
+  bisa saja PNG/WEBP/GIF (thumbnail sendiri sudah pasti JPEG dari
+  `make_thumbnail()`, jadi tidak terdampak). Fungsi baru `detect_image_mime()`
+  memakai `getimagesize()` (baca header file secukupnya, bukan seluruh isi -
+  tetap murah) untuk deteksi tipe asli file "full", fallback ke `image/jpeg`
+  kalau gagal dideteksi (perilaku lama, tidak ada regresi).
+
 ## [1.15.2] - 2026-09-27
 
 ### Fixed

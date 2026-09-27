@@ -14,10 +14,6 @@ ternyata butuh itu dicoret dari daftar kerja dan dipindah ke catatan di
 bagian bawah, bukan tanggung jawab aplikasi ini untuk dieksekusi.
 
 ## Performa & Robustness
-- [ ] **Validasi MIME gambar di `image.php`** — `serve_cached_file()` selalu
-  set `Content-Type: image/jpeg` walau data `tbl_item.gambar` belum tentu
-  JPEG. Deteksi tipe asli (mis. `finfo`/`getimagesizefromstring`) sebelum
-  set header.
 - [ ] **Kurangi write SQLite per request API** — tiap request API menulis
   3x ke `settings.db` (`last_used_at`, rate limit, log). Pertimbangkan
   throttle `last_used_at` (mis. update maks 1x/menit per key) untuk
