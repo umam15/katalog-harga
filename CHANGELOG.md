@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.1] - 2026-09-27
+
+### Changed
+- **Cache in-memory per-request** untuk `get_setting()` (otomatis ikut
+  menguntungkan semua fungsi turunan: `get_display_jenis()`,
+  `get_show_stok_kosong()`, `get_harga_pembulatan()`,
+  `get_bulatkan_harga_detail()`, `get_api_enabled()`, dst - tanpa perlu
+  diubah satu-satu) serta `get_kantor_list()`/`get_jenis_list()`.
+  `set_setting()` menyinkronkan cache-nya supaya baca-setelah-tulis dalam
+  request yang sama tetap dapat nilai terbaru. Query SQLite/PostgreSQL
+  berulang untuk key/data yang sama kini cuma sekali per request.
+
 ## [1.15.0] - 2026-09-27
 
 ### Added

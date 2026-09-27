@@ -14,9 +14,6 @@ ternyata butuh itu dicoret dari daftar kerja dan dipindah ke catatan di
 bagian bawah, bukan tanggung jawab aplikasi ini untuk dieksekusi.
 
 ## Performa & Robustness
-- [ ] **Cache `get_setting()`/`get_kantor_list()`/`get_jenis_list()` per-request**
-  — dipanggil berkali-kali dalam satu request (kantor, display_jenis, stok
-  kosong, pembulatan harga, dst). Static array in-memory, risiko rendah.
 - [ ] **Atomic write cache gambar** — `image.php` pakai `file_put_contents()`
   polos tanpa `LOCK_EX`/temp+rename; request bersamaan pada item yang baru
   pertama kali diakses berisiko file cache korup/terbaca separuh.

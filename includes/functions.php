@@ -238,11 +238,28 @@ function get_settings_pdo(): PDO {
     return $pdo;
 }
 
+// Cache in-memory get_setting() untuk satu request - dipanggil berkali-kali
+// per request (kantor, display_jenis, stok kosong, pembulatan harga, dst).
+// Pakai fungsi terpisah yang me-return array by-reference supaya cache-nya
+// bisa dibaca get_setting() dan ditulis set_setting() tanpa variabel global.
+// Cukup di titik pusat ini - semua fungsi turunan (get_display_jenis(),
+// get_show_stok_kosong(), dll, yang semuanya panggil get_setting()) otomatis
+// ikut ke-cache tanpa perlu diubah satu-satu.
+function &_settings_memo(): array {
+    static $cache = [];
+    return $cache;
+}
+
 function get_setting(string $key, ?string $default = null): ?string {
+    $cache = &_settings_memo();
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key] ?? $default;
+    }
     $stmt = get_settings_pdo()->prepare('SELECT value FROM app_settings WHERE key = ?');
     $stmt->execute([$key]);
     $row = $stmt->fetch();
-    return $row ? $row['value'] : $default;
+    $cache[$key] = $row ? $row['value'] : null;
+    return $cache[$key] ?? $default;
 }
 
 function set_setting(string $key, string $value): void {
@@ -251,6 +268,10 @@ function set_setting(string $key, string $value): void {
          ON CONFLICT(key) DO UPDATE SET value = excluded.value'
     );
     $stmt->execute([$key, $value]);
+    // Sinkronkan cache in-memory supaya get_setting() untuk key yang sama
+    // di request ini langsung dapat nilai baru (bukan nilai basi sebelum ditulis).
+    $cache = &_settings_memo();
+    $cache[$key] = $value;
 }
 
 /**
@@ -275,32 +296,38 @@ function get_pgsql_pdo(?array $overrides = null): PDO {
     ]);
 }
 
-/** Ambil daftar kantor/gudang unik dari tbl_itemstok. */
+/** Ambil daftar kantor/gudang unik dari tbl_itemstok. Di-cache per request. */
 function get_kantor_list(PDO $pdo): array {
+    static $cache = null;
+    if ($cache !== null) return $cache;
     try {
         $stmt = $pdo->query(
             "SELECT DISTINCT kantor FROM tbl_itemstok
              WHERE kantor IS NOT NULL AND kantor <> ''
              ORDER BY kantor"
         );
-        return array_column($stmt->fetchAll(), 'kantor');
+        $cache = array_column($stmt->fetchAll(), 'kantor');
     } catch (PDOException $e) {
-        return [];
+        $cache = [];
     }
+    return $cache;
 }
 
-/** Ambil daftar tipe/jenis item unik dari tbl_item (untuk filter tampilan umum). */
+/** Ambil daftar tipe/jenis item unik dari tbl_item (untuk filter tampilan umum). Di-cache per request. */
 function get_jenis_list(PDO $pdo): array {
+    static $cache = null;
+    if ($cache !== null) return $cache;
     try {
         $stmt = $pdo->query(
             "SELECT DISTINCT jenis FROM tbl_item
              WHERE jenis IS NOT NULL AND jenis <> ''
              ORDER BY jenis"
         );
-        return array_column($stmt->fetchAll(), 'jenis');
+        $cache = array_column($stmt->fetchAll(), 'jenis');
     } catch (PDOException $e) {
-        return [];
+        $cache = [];
     }
+    return $cache;
 }
 
 /**
