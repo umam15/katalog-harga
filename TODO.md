@@ -13,15 +13,6 @@ sisi server itu (index baru, extension baru, ubah skema, dll). Usulan yang
 ternyata butuh itu dicoret dari daftar kerja dan dipindah ke catatan di
 bagian bawah, bukan tanggung jawab aplikasi ini untuk dieksekusi.
 
-## Keamanan
-- [ ] **Pisahkan pesan error database untuk UI vs log internal** — saat ini
-  exception PDO berpotensi tampil apa adanya ke user; standar OWASP:
-  pesan generik ke UI, detail teknis hanya ke log server.
-- [ ] **Hardening session (PHP 8.2)** — `ensure_session()` di
-  `includes/functions.php` masih pakai default PHP: belum set cookie
-  `httponly`/`secure`/`samesite`, dan belum regenerate session ID saat
-  login berhasil (mitigasi session fixation).
-
 ## Performa & Robustness
 - [ ] **Cache `get_setting()`/`get_kantor_list()`/`get_jenis_list()` per-request**
   — dipanggil berkali-kali dalam satu request (kantor, display_jenis, stok

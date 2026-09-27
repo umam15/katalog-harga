@@ -3,6 +3,19 @@
 // koneksi PostgreSQL yang kredensialnya kini disimpan di pengaturan (bukan hardcoded),
 // dan daftar kantor/gudang untuk dipilih user.
 
+// Nonaktifkan tampilan detail error PHP ke browser (standar produksi OWASP) -
+// warning/fatal error/exception yang tidak sengaja ditangkap try/catch tetap
+// dicatat penuh ke error log server (Apache/PHP), cuma tidak pernah tampil
+// sebagai output halaman ke pengunjung. Dipasang lewat ini_set() di file yang
+// selalu di-require paling awal oleh SEMUA entry point (halaman publik,
+// panel admin, API), bukan lewat php.ini/.user.ini, supaya berlaku sama
+// persis di semua cara deploy yang didukung aplikasi ini (Docker, native
+// Apache mod_php, Synology Web Station) tanpa perlu akses config server.
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
 if (!defined('ROOT_PATH')) {
     // Fallback jika file ini di-require langsung tanpa lewat config.php
     define('ROOT_PATH', dirname(__DIR__));
@@ -696,6 +709,22 @@ function set_current_kantor(string $kantor): void {
 
 function ensure_session(): void {
     if (session_status() === PHP_SESSION_NONE) {
+        // httponly: cookie sesi tidak bisa dibaca lewat JavaScript (mitigasi
+        // pencurian sesi lewat XSS). secure: dideteksi dinamis dari koneksi
+        // yang sedang berjalan (sama seperti deteksi skema di
+        // api/v1/openapi.php) - dipaksa selalu true akan mematahkan login di
+        // deployment yang belum pakai HTTPS (mis. akses LAN langsung tanpa
+        // reverse proxy TLS). samesite=Lax: standar aman default, cukup
+        // untuk mitigasi CSRF tanpa mematahkan navigasi biasa (aplikasi ini
+        // juga sudah punya token CSRF sendiri di form admin).
+        $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path'     => '/',
+            'secure'   => $https,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
         session_start();
     }
 }

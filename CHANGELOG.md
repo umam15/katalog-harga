@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.15.0] - 2026-09-27
+
+### Added
+- **Nonaktifkan tampilan detail error PHP ke browser** (`display_errors`
+  off, `log_errors` on, `error_reporting(E_ALL)`) lewat `ini_set()` di
+  `includes/functions.php` — file yang selalu di-require paling awal oleh
+  semua entry point (halaman publik, panel admin, API). Sebelumnya tidak
+  ada pengaturan ini sama sekali, artinya image resmi `php:8.2-apache`
+  jalan dengan default `display_errors=On` - warning/fatal error PHP apa
+  pun (bukan cuma exception database yang sengaja ditangkap try/catch)
+  berisiko bocor ke output halaman. Berlaku sama persis di semua cara
+  deploy (Docker, native Apache mod_php, Synology Web Station) karena
+  pakai `ini_set()` di kode, bukan `php.ini`/`.user.ini`.
+- **Hardening cookie sesi** — `ensure_session()` kini set `httponly`
+  (cegah akses lewat JavaScript/XSS) dan `samesite=Lax` (mitigasi CSRF).
+  `secure` dideteksi dinamis dari skema koneksi (sama seperti deteksi di
+  `api/v1/openapi.php`), bukan dipaksa `true`, supaya tidak mematahkan
+  login di deployment yang belum pakai HTTPS.
+
+### Changed
+- `TODO.md`: item "Pisahkan pesan error database" dianggap selesai oleh
+  perbaikan `display_errors` di atas (lebih menyeluruh - berlaku untuk
+  semua jenis error, tidak cuma PDOException). Item "Hardening session"
+  juga selesai; catatan soal "belum regenerate session ID saat login"
+  di deskripsi lamanya sudah tidak akurat - `admin/login.php` sebenarnya
+  sudah memanggil `session_regenerate_id(true)` sejak sebelumnya, cuma
+  flag cookie yang belum diset.
+
 ## [1.14.0] - 2026-09-27
 
 ### Added
