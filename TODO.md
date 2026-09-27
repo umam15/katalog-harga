@@ -14,9 +14,6 @@ ternyata butuh itu dicoret dari daftar kerja dan dipindah ke catatan di
 bagian bawah, bukan tanggung jawab aplikasi ini untuk dieksekusi.
 
 ## Keamanan
-- [ ] **Proteksi brute-force di `admin/login.php`** — saat ini tidak ada
-  pembatasan percobaan login. Pertimbangkan rate-limit sederhana per
-  IP/username (mis. counter di `settings.db` + jeda setelah N kali gagal).
 - [ ] **Security header di `.htaccess`/`config.php`** — belum ada
   `X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
   `Content-Security-Policy`.

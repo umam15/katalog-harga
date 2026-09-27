@@ -40,17 +40,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Login biasa (admin maupun user)
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
-        $account = find_admin_by_username($username);
 
-        if ($account && password_verify($password, $account['password_hash'])) {
-            $_SESSION['user_id']  = $account['id'];
-            $_SESSION['username'] = $account['username'];
-            $_SESSION['role']     = $account['role'];
-            session_regenerate_id(true);
-            header('Location: ' . ($account['role'] === 'admin' ? 'index.php' : '../index.php'));
-            exit;
+        $retryAfter = login_attempt_check($username);
+        if ($retryAfter !== null) {
+            $error = "Terlalu banyak percobaan gagal. Coba lagi dalam {$retryAfter} detik.";
+        } else {
+            $account = find_admin_by_username($username);
+
+            if ($account && password_verify($password, $account['password_hash'])) {
+                login_attempt_clear($username);
+                $_SESSION['user_id']  = $account['id'];
+                $_SESSION['username'] = $account['username'];
+                $_SESSION['role']     = $account['role'];
+                session_regenerate_id(true);
+                header('Location: ' . ($account['role'] === 'admin' ? 'index.php' : '../index.php'));
+                exit;
+            }
+            login_attempt_record_failure($username);
+            $error = 'Username atau password salah.';
         }
-        $error = 'Username atau password salah.';
     }
 }
 

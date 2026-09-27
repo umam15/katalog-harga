@@ -178,6 +178,16 @@ function get_settings_pdo(): PDO {
         created_at  TEXT NOT NULL
     )');
 
+    // Proteksi brute-force login - satu baris per kombinasi IP+username
+    // (lihat login_attempt_identifier()). locked_until = 0 berarti tidak
+    // sedang dikunci.
+    $pdo->exec('CREATE TABLE IF NOT EXISTS login_attempts (
+        identifier      TEXT PRIMARY KEY,
+        attempts        INTEGER NOT NULL DEFAULT 0,
+        last_attempt_at REAL NOT NULL,
+        locked_until    REAL NOT NULL DEFAULT 0
+    )');
+
     // Migrasi untuk instalasi lama (v1.1.0 ke bawah) yang tabelnya belum
     // punya kolom role.
     $hasRoleColumn = false;
@@ -790,6 +800,76 @@ function require_admin(): void {
         header('Location: login.php');
         exit;
     }
+}
+
+/* ------------------------- Proteksi brute-force ------------------------ */
+// Lockout sementara (bukan permanen) setelah percobaan login gagal
+// bertubi-tubi, dilacak per kombinasi IP+username - bukan IP saja (supaya
+// satu jaringan kantor yang salah ketik password tidak saling mengunci
+// pengguna lain) dan bukan username saja (supaya penyerang tidak bisa
+// mengunci admin asli dengan sengaja gagal login berkali-kali dari IP mana
+// pun). Jeda tunggu naik eksponensial tiap percobaan tambahan setelah batas
+// terlewati, dibatasi maksimum, dan hitungan otomatis reset kalau tidak ada
+// percobaan baru untuk sementara waktu - sesuai rekomendasi OWASP soal
+// lockout yang berbasis waktu, bukan penguncian akun permanen.
+
+const LOGIN_ATTEMPT_THRESHOLD = 5;   // percobaan gagal sebelum mulai ditunda
+const LOGIN_LOCKOUT_BASE_SEC  = 30;  // jeda pertama setelah melewati batas
+const LOGIN_LOCKOUT_MAX_SEC   = 900; // jeda maksimum (15 menit)
+const LOGIN_ATTEMPT_RESET_SEC = 900; // reset hitungan kalau tidak ada percobaan baru selama ini
+
+function login_attempt_identifier(string $username): string {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    return $ip . '|' . mb_strtolower(trim($username));
+}
+
+/** Detik yang masih harus ditunggu sebelum boleh mencoba login lagi, atau null kalau boleh langsung. */
+function login_attempt_check(string $username): ?int {
+    $stmt = get_settings_pdo()->prepare('SELECT locked_until FROM login_attempts WHERE identifier = ?');
+    $stmt->execute([login_attempt_identifier($username)]);
+    $row = $stmt->fetch();
+    if (!$row) return null;
+
+    $remaining = (float) $row['locked_until'] - microtime(true);
+    return $remaining > 0 ? (int) ceil($remaining) : null;
+}
+
+/** Catat satu percobaan login gagal & tentukan apakah sekarang harus dikunci sementara. */
+function login_attempt_record_failure(string $username): void {
+    $pdo = get_settings_pdo();
+    $id  = login_attempt_identifier($username);
+    $now = microtime(true);
+
+    $stmt = $pdo->prepare('SELECT attempts, last_attempt_at FROM login_attempts WHERE identifier = ?');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+
+    $expired  = $row && ($now - (float) $row['last_attempt_at']) > LOGIN_ATTEMPT_RESET_SEC;
+    $attempts = ($row && !$expired) ? (int) $row['attempts'] + 1 : 1;
+
+    $lockedUntil = 0.0;
+    if ($attempts >= LOGIN_ATTEMPT_THRESHOLD) {
+        $extra = $attempts - LOGIN_ATTEMPT_THRESHOLD;
+        $delay = min(LOGIN_LOCKOUT_MAX_SEC, LOGIN_LOCKOUT_BASE_SEC * (2 ** $extra));
+        $lockedUntil = $now + $delay;
+    }
+
+    $pdo->prepare(
+        'INSERT INTO login_attempts (identifier, attempts, last_attempt_at, locked_until) VALUES (?, ?, ?, ?)
+         ON CONFLICT(identifier) DO UPDATE SET attempts = excluded.attempts, last_attempt_at = excluded.last_attempt_at, locked_until = excluded.locked_until'
+    )->execute([$id, $attempts, $now, $lockedUntil]);
+
+    // Buang baris basi sesekali (~1% pemanggilan), sama seperti retensi
+    // log API - tidak perlu cron terpisah.
+    if (random_int(1, 100) === 1) {
+        $pdo->exec('DELETE FROM login_attempts WHERE last_attempt_at < ' . ($now - LOGIN_ATTEMPT_RESET_SEC));
+    }
+}
+
+/** Hapus catatan percobaan gagal setelah login berhasil. */
+function login_attempt_clear(string $username): void {
+    $pdo = get_settings_pdo();
+    $pdo->prepare('DELETE FROM login_attempts WHERE identifier = ?')->execute([login_attempt_identifier($username)]);
 }
 
 /* ------------------------------- CSRF -------------------------------- */

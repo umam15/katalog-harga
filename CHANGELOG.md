@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.0] - 2026-09-27
+
+### Added
+- **Proteksi brute-force di `admin/login.php`** — lockout sementara
+  (berbasis waktu, bukan permanen) setelah percobaan login gagal
+  bertubi-tubi, dilacak per kombinasi IP+username. Jeda tunggu naik
+  eksponensial (30 detik dasar, maksimum 15 menit) setelah 5 kali gagal;
+  hitungan otomatis reset kalau tidak ada percobaan baru selama 15 menit,
+  dan langsung dihapus setelah login berhasil. Tabel `login_attempts` baru
+  di `settings.db`, dibersihkan otomatis sesekali seperti retensi log API
+  — tidak butuh cron terpisah.
+
 ## [1.12.6] - 2026-09-27
 
 ### Changed
